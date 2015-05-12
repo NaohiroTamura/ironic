@@ -227,7 +227,7 @@ class PXEAndIRMCDriver(base.BaseDriver):
         self.console = ipmitool.IPMIShellinaboxConsole()
         self.deploy = pxe.PXEDeploy()
         self.management = irmc_management.IRMCManagement()
-        self.vendor = pxe.VendorPassthru()
+        self.vendor = irmc_power.IRMCVendorPassthru()
 
 
 class PXEAndVirtualBoxDriver(base.BaseDriver):

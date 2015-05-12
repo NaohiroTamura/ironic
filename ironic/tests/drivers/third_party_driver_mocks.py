@@ -167,7 +167,10 @@ if not scciclient:
         MOUNT_CD=mock.sentinel.MOUNT_CD,
         UNMOUNT_CD=mock.sentinel.UNMOUNT_CD,
         MOUNT_FD=mock.sentinel.MOUNT_FD,
-        UNMOUNT_FD=mock.sentinel.UNMOUNT_FD)
+        UNMOUNT_FD=mock.sentinel.UNMOUNT_FD,
+        POWER_SOFT_OFF=mock.sentinel.POWER_SOFT_OFF,
+        POWER_RAISE_NMI=mock.sentinel.POWER_RAISE_NMI,
+    )
 
 
 # if anything has loaded the iRMC driver yet, reload it now that the
