@@ -93,6 +93,8 @@ SCCICLIENT_IRMC_SCCI_SPEC = (
     'UNMOUNT_CD',
     'MOUNT_FD',
     'UNMOUNT_FD',
+    'POWER_SOFT_OFF',
+    'POWER_RAISE_NMI',
     'SCCIClientError',
     'get_share_type',
     'get_client',

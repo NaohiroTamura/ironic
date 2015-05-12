@@ -35,6 +35,7 @@ from ironic.drivers.modules import ipminative
 from ironic.drivers.modules import ipmitool
 from ironic.drivers.modules.irmc import management as irmc_management
 from ironic.drivers.modules.irmc import power as irmc_power
+from ironic.drivers.modules.irmc import vendor as irmc_vendor
 from ironic.drivers.modules.msftocs import management as msftocs_management
 from ironic.drivers.modules.msftocs import power as msftocs_power
 from ironic.drivers.modules import pxe
@@ -227,7 +228,7 @@ class PXEAndIRMCDriver(base.BaseDriver):
         self.console = ipmitool.IPMIShellinaboxConsole()
         self.deploy = pxe.PXEDeploy()
         self.management = irmc_management.IRMCManagement()
-        self.vendor = pxe.VendorPassthru()
+        self.vendor = irmc_vendor.IRMCPxeVendorPassthru()
 
 
 class PXEAndVirtualBoxDriver(base.BaseDriver):

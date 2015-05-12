@@ -27,6 +27,7 @@ from ironic.conductor import task_manager
 from ironic.drivers.modules import ipmitool
 from ironic.drivers.modules.irmc import common as irmc_common
 from ironic.drivers.modules.irmc import management as irmc_management
+from ironic.drivers.modules import pxe
 from ironic.drivers import utils as driver_utils
 from ironic.tests.conductor import utils as mgr_utils
 from ironic.tests.db import base as db_base
@@ -53,6 +54,7 @@ class IRMCManagementTestCase(db_base.DbTestCase):
         expected = irmc_common.COMMON_PROPERTIES
         expected.update(ipmitool.COMMON_PROPERTIES)
         expected.update(ipmitool.CONSOLE_PROPERTIES)
+        expected.update(pxe.COMMON_PROPERTIES)
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=True) as task:
             self.assertEqual(expected, task.driver.get_properties())
