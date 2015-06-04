@@ -193,7 +193,8 @@ class VendorPassthru(base.VendorInterface):
         if method in ('graceful_shutdown', 'raise_nmi'):
             if kwargs:
                 raise exception.InvalidParameterValue(_(
-                    "Method, %s, doesn't take any parameter.") % method)
+                    "Method '%s' doesn't take any parameter.") % method)
+            irmc_common.parse_driver_info(task.node)
         else:
             super(VendorPassthru, self).validate(task, method, **kwargs)
 

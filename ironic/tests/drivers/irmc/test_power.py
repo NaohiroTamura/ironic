@@ -261,28 +261,39 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
             for prop in irmc_pxe_prop:
                 self.assertIn(prop, properties)
 
-    def test_validate_graceful_shutdown(self):
+    @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
+                       autospec=True)
+    def test_validate_graceful_shutdown(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
             result = vendor.validate(task, method='graceful_shutdown')
+            mock_drvinfo.assert_called_once_with(task.node)
             self.assertEqual(result, None)
 
-    def test_validate_raise_nmi(self):
+    @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
+                       autospec=True)
+    def test_validate_raise_nmi(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
             result = vendor.validate(task, method='raise_nmi')
+            mock_drvinfo.assert_called_once_with(task.node)
             self.assertEqual(result, None)
 
-    def test_validate_unknown(self):
+    @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
+                       autospec=True)
+    def test_validate_unknown(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
             result = vendor.validate(task, method='unknown')
+            self.assertFalse(mock_drvinfo.called)
             self.assertEqual(result, None)
 
-    def test_validate_graceful_shutdown_with_param(self):
+    @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
+                       autospec=True)
+    def test_validate_graceful_shutdown_with_param(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
@@ -291,8 +302,11 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                               task,
                               method='graceful_shutdown',
                               foo='bar')
+            self.assertFalse(mock_drvinfo.called)
 
-    def test_validate_raise_nmi_with_param(self):
+    @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
+                       autospec=True)
+    def test_validate_raise_nmi_with_param(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
@@ -301,26 +315,34 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                               task,
                               method='raise_nmi',
                               foo='bar')
+            self.assertFalse(mock_drvinfo.called)
 
     @mock.patch.object(pxe.VendorPassthru, 'validate', spec_set=True,
                        autospec=True)
-    def test_validate_pass_deploy_info(self, validate_mock):
+    @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
+                       autospec=True)
+    def test_validate_pass_deploy_info(self, mock_drvinfo, validate_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
             result = vendor.validate(task, method='pass_deploy_info')
+            self.assertFalse(mock_drvinfo.called)
             validate_mock.assert_called_once_with(vendor, task,
                                                   'pass_deploy_info')
             self.assertEqual(result, None)
 
     @mock.patch.object(pxe.VendorPassthru, 'validate', spec_set=True,
                        autospec=True)
-    def test_validate_pass_bootloader_install_info(self, validate_mock):
+    @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
+                       autospec=True)
+    def test_validate_pass_bootloader_install_info(self, mock_drvinfo,
+                                                   validate_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
             result = vendor.validate(
                 task, method='pass_bootloader_install_info')
+            self.assertFalse(mock_drvinfo.called)
             validate_mock.assert_called_once_with(
                 vendor, task, 'pass_bootloader_install_info')
             self.assertEqual(result, None)
