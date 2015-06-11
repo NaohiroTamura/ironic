@@ -214,16 +214,16 @@ class VendorPassthru(base.VendorInterface):
             curr_state = task.driver.power.get_power_state(task)
         except Exception as e:
             with excutils.save_and_reraise_exception():
-                node['last_error'] = _(
+                node.last_error = _(
                     "Failed to change power state to POWER_OFF. "
                     "Error: %(error)s") % {'error': e}
-                node['target_power_state'] = states.NOSTATE
+                node.target_power_state = states.NOSTATE
                 node.save()
 
         if curr_state == states.POWER_OFF:
-            node['last_error'] = None
-            node['power_state'] = states.POWER_OFF
-            node['target_power_state'] = states.NOSTATE
+            node.last_error = None
+            node.power_state = states.POWER_OFF
+            node.target_power_state = states.NOSTATE
             node.save()
             LOG.warn(_LW("Not going to change_node_power_state because "
                          "current state is already in POWER_OFF."))
@@ -234,8 +234,8 @@ class VendorPassthru(base.VendorInterface):
             LOG.warn(_LW("Driver returns ERROR power state for node %s."),
                      node.uuid)
 
-        node['target_power_state'] = states.POWER_OFF
-        node['last_error'] = None
+        node.target_power_state = states.POWER_OFF
+        node.last_error = None
         node.save()
 
         irmc_client = irmc_common.get_irmc_client(node)
@@ -244,21 +244,21 @@ class VendorPassthru(base.VendorInterface):
             irmc_client(scci.POWER_SOFT_OFF)
 
         except scci.SCCIClientError as irmc_exception:
-            node['last_error'] = _(
+            node.last_error = _(
                 "iRMC graceful_shutdown failed for node %(node_id)s "
                 "to change power state to POWER_OFF. "
                 "Error: %(error)s") % {'node_id': node.uuid,
                                        'error': irmc_exception}
-            LOG.error(node['last_error'])
+            LOG.error(node.last_error)
             operation = _('iRMC graceful_shutdown')
             raise exception.IRMCOperationError(operation=operation,
                                                error=irmc_exception)
         else:
-            node['power_state'] = states.POWER_OFF
+            node.power_state = states.POWER_OFF
             LOG.info(_LI('Successfully set node %(node)s power state to '
                          'POWER_OFF.'), {'node': node.uuid})
         finally:
-            node['target_power_state'] = states.NOSTATE
+            node.target_power_state = states.NOSTATE
             node.save()
 
     @base.passthru(['POST'])
