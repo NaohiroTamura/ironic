@@ -215,8 +215,8 @@ class VendorPassthru(base.VendorInterface):
         except Exception as e:
             with excutils.save_and_reraise_exception():
                 node.last_error = _(
-                    "Failed to change power state to POWER_OFF. "
-                    "Error: %(error)s") % {'error': e}
+                    "Failed to get the current power state during graceful "
+                    "shutdown. Error: %(error)s") % {'error': e}
                 node.target_power_state = states.NOSTATE
                 node.save()
 
@@ -225,8 +225,8 @@ class VendorPassthru(base.VendorInterface):
             node.power_state = states.POWER_OFF
             node.target_power_state = states.NOSTATE
             node.save()
-            LOG.warn(_LW("Not going to change_node_power_state because "
-                         "current state is already in POWER_OFF."))
+            LOG.warn(_LW("Not going to change node power state because "
+                         "current state is already POWER_OFF."))
             return
 
         if curr_state == states.ERROR:
@@ -245,8 +245,7 @@ class VendorPassthru(base.VendorInterface):
 
         except scci.SCCIClientError as irmc_exception:
             node.last_error = _(
-                "iRMC graceful_shutdown failed for node %(node_id)s "
-                "to change power state to POWER_OFF. "
+                "iRMC graceful_shutdown failed for node %(node_id)s. "
                 "Error: %(error)s") % {'node_id': node.uuid,
                                        'error': irmc_exception}
             LOG.error(node.last_error)
@@ -255,8 +254,9 @@ class VendorPassthru(base.VendorInterface):
                                                error=irmc_exception)
         else:
             node.power_state = states.POWER_OFF
-            LOG.info(_LI('Successfully set node %(node)s power state to '
-                         'POWER_OFF.'), {'node': node.uuid})
+            LOG.info(_LI('iRMC graceful_shutdown successfully set node '
+                         '%(node)s power state to POWER_OFF.'),
+                     {'node': node.uuid})
         finally:
             node.target_power_state = states.NOSTATE
             node.save()

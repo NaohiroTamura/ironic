@@ -269,7 +269,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
             vendor = irmc_power.IRMCVendorPassthru()
             result = vendor.validate(task, method='graceful_shutdown')
             mock_drvinfo.assert_called_once_with(task.node)
-            self.assertEqual(result, None)
+            self.assertIsNone(result)
 
     @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
                        autospec=True)
@@ -279,7 +279,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
             vendor = irmc_power.IRMCVendorPassthru()
             result = vendor.validate(task, method='raise_nmi')
             mock_drvinfo.assert_called_once_with(task.node)
-            self.assertEqual(result, None)
+            self.assertIsNone(result)
 
     @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
                        autospec=True)
@@ -289,7 +289,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
             vendor = irmc_power.IRMCVendorPassthru()
             result = vendor.validate(task, method='unknown')
             self.assertFalse(mock_drvinfo.called)
-            self.assertEqual(result, None)
+            self.assertIsNone(result)
 
     @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
                        autospec=True)
@@ -329,7 +329,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
             self.assertFalse(mock_drvinfo.called)
             validate_mock.assert_called_once_with(vendor, task,
                                                   'pass_deploy_info')
-            self.assertEqual(result, None)
+            self.assertIsNone(result)
 
     @mock.patch.object(pxe.VendorPassthru, 'validate', spec_set=True,
                        autospec=True)
@@ -345,7 +345,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
             self.assertFalse(mock_drvinfo.called)
             validate_mock.assert_called_once_with(
                 vendor, task, 'pass_bootloader_install_info')
-            self.assertEqual(result, None)
+            self.assertIsNone(result)
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
@@ -364,7 +364,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
             get_power_state_mock.assert_called_once_with(
                 task.driver.power, task)
             irmc_client.assert_called_once_with(irmc_power.scci.POWER_SOFT_OFF)
-            self.assertEqual(result, None)
+            self.assertIsNone(result)
             self.assertEqual(states.POWER_OFF, task.node['power_state'])
             self.assertIsNone(task.node['target_power_state'])
             self.assertIsNone(task.node['last_error'])
@@ -412,7 +412,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
             get_power_state_mock.assert_called_once_with(
                 task.driver.power, task)
             irmc_client.assert_called_once_with(irmc_power.scci.POWER_SOFT_OFF)
-            self.assertEqual(result, None)
+            self.assertIsNone(result)
             self.assertEqual(states.POWER_OFF, task.node['power_state'])
             self.assertIsNone(task.node['target_power_state'])
             self.assertIsNone(task.node['last_error'])
@@ -434,7 +434,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
             get_power_state_mock.assert_called_once_with(
                 task.driver.power, task)
             irmc_client.assert_called_once_with(irmc_power.scci.POWER_SOFT_OFF)
-            self.assertEqual(result, None)
+            self.assertIsNone(result)
             self.assertEqual(states.POWER_OFF, task.node['power_state'])
             self.assertIsNone(task.node['target_power_state'])
             self.assertIsNone(task.node['last_error'])
@@ -477,7 +477,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
 
             irmc_client.assert_called_once_with(
                 irmc_power.scci.POWER_RAISE_NMI)
-            self.assertEqual(result, None)
+            self.assertIsNone(result)
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
