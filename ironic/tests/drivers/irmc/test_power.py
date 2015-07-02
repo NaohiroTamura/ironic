@@ -267,7 +267,8 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
-            result = vendor.validate(task, method='graceful_shutdown')
+            result = vendor.validate(
+                task, method='graceful_shutdown', http_method='POST')
             mock_drvinfo.assert_called_once_with(task.node)
             self.assertIsNone(result)
 
@@ -277,7 +278,8 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
-            result = vendor.validate(task, method='raise_nmi')
+            result = vendor.validate(
+                task, method='raise_nmi', http_method='POST')
             mock_drvinfo.assert_called_once_with(task.node)
             self.assertIsNone(result)
 
@@ -287,7 +289,8 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
-            result = vendor.validate(task, method='unknown')
+            result = vendor.validate(
+                task, method='unknown', http_method='POST')
             self.assertFalse(mock_drvinfo.called)
             self.assertIsNone(result)
 
@@ -325,10 +328,11 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
-            result = vendor.validate(task, method='pass_deploy_info')
+            result = vendor.validate(
+                task, method='pass_deploy_info', foo='bar')
             self.assertFalse(mock_drvinfo.called)
-            validate_mock.assert_called_once_with(vendor, task,
-                                                  'pass_deploy_info')
+            validate_mock.assert_called_once_with(
+                vendor, task, 'pass_deploy_info', foo='bar')
             self.assertIsNone(result)
 
     @mock.patch.object(pxe.VendorPassthru, 'validate', spec_set=True,
@@ -341,10 +345,10 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
             result = vendor.validate(
-                task, method='pass_bootloader_install_info')
+                task, method='pass_bootloader_install_info', foo='bar')
             self.assertFalse(mock_drvinfo.called)
             validate_mock.assert_called_once_with(
-                vendor, task, 'pass_bootloader_install_info')
+                vendor, task, 'pass_bootloader_install_info', foo='bar')
             self.assertIsNone(result)
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,

@@ -191,7 +191,7 @@ class VendorPassthru(base.VendorInterface):
             value.
         """
         if method in ('graceful_shutdown', 'raise_nmi'):
-            if kwargs:
+            if {k: v for (k, v) in kwargs.items() if k is not 'http_method'}:
                 raise exception.InvalidParameterValue(_(
                     "Method '%s' doesn't take any parameter.") % method)
             irmc_common.parse_driver_info(task.node)
