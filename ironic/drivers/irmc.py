@@ -47,7 +47,7 @@ class IRMCVirtualMediaIscsiDriver(base.BaseDriver):
         self.deploy = deploy.IRMCVirtualMediaIscsiDeploy()
         self.console = ipmitool.IPMIShellinaboxConsole()
         self.management = management.IRMCManagement()
-        self.vendor = deploy.VendorPassthru()
+        self.vendor = power.IRMCDeployVendorPassthru()
 
 
 class IRMCVirtualMediaAgentDriver(base.BaseDriver):

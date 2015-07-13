@@ -241,7 +241,7 @@ class VendorPassthru(base.VendorInterface):
         irmc_client = irmc_common.get_irmc_client(node)
 
         try:
-            irmc_client(scci.POWER_SOFT_OFF)
+            irmc_client(scci.POWER_SOFT_OFF, async=False)
 
         except scci.SCCIClientError as irmc_exception:
             node.last_error = _(
@@ -287,4 +287,9 @@ class VendorPassthru(base.VendorInterface):
 
 class IRMCVendorPassthru(VendorPassthru, pxe.VendorPassthru):
     """Vendor-specific interfaces for iRMC power and pxe drivers."""
+    pass
+
+
+class IRMCDeployVendorPassthru(VendorPassthru, irmc_deploy.VendorPassthru):
+    """Vendor-specific interfaces for iRMC power and deploy drivers."""
     pass

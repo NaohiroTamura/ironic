@@ -266,68 +266,93 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_validate_graceful_shutdown(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            result = vendor.validate(
-                task, method='graceful_shutdown', http_method='POST')
-            mock_drvinfo.assert_called_once_with(task.node)
-            self.assertIsNone(result)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                result = vendor.validate(
+                    task, method='graceful_shutdown', http_method='POST')
+                mock_drvinfo.assert_called_once_with(task.node)
+                self.assertIsNone(result)
+                mock_drvinfo.reset_mock()
 
     @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
                        autospec=True)
     def test_validate_raise_nmi(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            result = vendor.validate(
-                task, method='raise_nmi', http_method='POST')
-            mock_drvinfo.assert_called_once_with(task.node)
-            self.assertIsNone(result)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                result = vendor.validate(
+                    task, method='raise_nmi', http_method='POST')
+                mock_drvinfo.assert_called_once_with(task.node)
+                self.assertIsNone(result)
+                mock_drvinfo.reset_mock()
 
     @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
                        autospec=True)
     def test_validate_unknown(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            result = vendor.validate(
-                task, method='unknown', http_method='POST')
-            self.assertFalse(mock_drvinfo.called)
-            self.assertIsNone(result)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                result = vendor.validate(
+                    task, method='unknown', http_method='POST')
+                self.assertFalse(mock_drvinfo.called)
+                self.assertIsNone(result)
+                mock_drvinfo.reset_mock()
 
     @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
                        autospec=True)
     def test_validate_graceful_shutdown_with_param(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            self.assertRaises(exception.InvalidParameterValue,
-                              vendor.validate,
-                              task,
-                              method='graceful_shutdown',
-                              foo='bar')
-            self.assertFalse(mock_drvinfo.called)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                self.assertRaises(exception.InvalidParameterValue,
+                                  vendor.validate,
+                                  task,
+                                  method='graceful_shutdown',
+                                  foo='bar')
+                self.assertFalse(mock_drvinfo.called)
+                mock_drvinfo.reset_mock()
 
     @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
                        autospec=True)
     def test_validate_raise_nmi_with_param(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            self.assertRaises(exception.InvalidParameterValue,
-                              vendor.validate,
-                              task,
-                              method='raise_nmi',
-                              foo='bar')
-            self.assertFalse(mock_drvinfo.called)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                self.assertRaises(exception.InvalidParameterValue,
+                                  vendor.validate,
+                                  task,
+                                  method='raise_nmi',
+                                  foo='bar')
+                self.assertFalse(mock_drvinfo.called)
+                mock_drvinfo.reset_mock()
 
     @mock.patch.object(pxe.VendorPassthru, 'validate', spec_set=True,
                        autospec=True)
     @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
                        autospec=True)
-    def test_validate_pass_deploy_info(self, mock_drvinfo, validate_mock):
+    def test_validate_pxe_pass_deploy_info(self, mock_drvinfo, validate_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
+            result = vendor.validate(
+                task, method='pass_deploy_info', foo='bar')
+            self.assertFalse(mock_drvinfo.called)
+            validate_mock.assert_called_once_with(
+                vendor, task, 'pass_deploy_info', foo='bar')
+            self.assertIsNone(result)
+
+    @mock.patch.object(irmc_deploy.VendorPassthru, 'validate',
+                       spec_set=True, autospec=True)
+    @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
+                       autospec=True)
+    def test_validate_irmc_pass_deploy_info(self, mock_drvinfo, validate_mock):
+        with task_manager.acquire(self.context, self.node.uuid,
+                                  shared=False) as task:
+            vendor = irmc_power.IRMCDeployVendorPassthru()
             result = vendor.validate(
                 task, method='pass_deploy_info', foo='bar')
             self.assertFalse(mock_drvinfo.called)
@@ -339,11 +364,27 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                        autospec=True)
     @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
                        autospec=True)
-    def test_validate_pass_bootloader_install_info(self, mock_drvinfo,
-                                                   validate_mock):
+    def test_validate_pxe_pass_bootloader_install_info(self, mock_drvinfo,
+                                                       validate_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             vendor = irmc_power.IRMCVendorPassthru()
+            result = vendor.validate(
+                task, method='pass_bootloader_install_info', foo='bar')
+            self.assertFalse(mock_drvinfo.called)
+            validate_mock.assert_called_once_with(
+                vendor, task, 'pass_bootloader_install_info', foo='bar')
+            self.assertIsNone(result)
+
+    @mock.patch.object(irmc_deploy.VendorPassthru, 'validate',
+                       spec_set=True, autospec=True)
+    @mock.patch.object(irmc_common, 'parse_driver_info', spec_set=True,
+                       autospec=True)
+    def test_validate_irmc_pass_bootloader_install_info(self, mock_drvinfo,
+                                                        validate_mock):
+        with task_manager.acquire(self.context, self.node.uuid,
+                                  shared=False) as task:
+            vendor = irmc_power.IRMCDeployVendorPassthru()
             result = vendor.validate(
                 task, method='pass_bootloader_install_info', foo='bar')
             self.assertFalse(mock_drvinfo.called)
@@ -360,18 +401,22 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            get_power_state_mock.return_value = states.POWER_ON
-            irmc_client = get_irmc_client_mock.return_value
-            result = vendor.graceful_shutdown(task)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                get_power_state_mock.return_value = states.POWER_ON
+                irmc_client = get_irmc_client_mock.return_value
+                result = vendor.graceful_shutdown(task)
 
-            get_power_state_mock.assert_called_once_with(
-                task.driver.power, task)
-            irmc_client.assert_called_once_with(irmc_power.scci.POWER_SOFT_OFF)
-            self.assertIsNone(result)
-            self.assertEqual(states.POWER_OFF, task.node['power_state'])
-            self.assertIsNone(task.node['target_power_state'])
-            self.assertIsNone(task.node['last_error'])
+                get_power_state_mock.assert_called_once_with(
+                    task.driver.power, task)
+                irmc_client.assert_called_once_with(
+                    irmc_power.scci.POWER_SOFT_OFF, async=False)
+                self.assertIsNone(result)
+                self.assertEqual(states.POWER_OFF, task.node['power_state'])
+                self.assertIsNone(task.node['target_power_state'])
+                self.assertIsNone(task.node['last_error'])
+                get_power_state_mock.reset_mock()
+                irmc_client.reset_mock()
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
@@ -382,22 +427,24 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                     get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            get_power_state_mock.side_effect = (
-                exception.InvalidParameterValue('fake exception'))
-            irmc_client = get_irmc_client_mock.return_value
-            task.node['power_state'] = states.POWER_ON
-            task.node['last_error'] = None
-            self.assertRaises(exception.InvalidParameterValue,
-                              vendor.graceful_shutdown,
-                              task)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                get_power_state_mock.side_effect = Exception()
+                irmc_client = get_irmc_client_mock.return_value
+                task.node['power_state'] = states.POWER_ON
+                task.node['last_error'] = None
+                self.assertRaises(exception.VendorPassthruException,
+                                  vendor.graceful_shutdown,
+                                  task)
 
-            get_power_state_mock.assert_called_once_with(
-                task.driver.power, task)
-            self.assertFalse(irmc_client.called)
-            self.assertEqual(states.POWER_ON, task.node['power_state'])
-            self.assertIsNone(task.node['target_power_state'])
-            self.assertIsNotNone(task.node['last_error'])
+                get_power_state_mock.assert_called_once_with(
+                    task.driver.power, task)
+                self.assertFalse(irmc_client.called)
+                self.assertEqual(states.POWER_ON, task.node['power_state'])
+                self.assertIsNone(task.node['target_power_state'])
+                self.assertIsNotNone(task.node['last_error'])
+                get_power_state_mock.reset_mock()
+                irmc_client.reset_mock()
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
@@ -408,18 +455,22 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                    get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            get_power_state_mock.return_value = states.POWER_ON
-            irmc_client = get_irmc_client_mock.return_value
-            result = vendor.graceful_shutdown(task)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                get_power_state_mock.return_value = states.POWER_ON
+                irmc_client = get_irmc_client_mock.return_value
+                result = vendor.graceful_shutdown(task)
 
-            get_power_state_mock.assert_called_once_with(
-                task.driver.power, task)
-            irmc_client.assert_called_once_with(irmc_power.scci.POWER_SOFT_OFF)
-            self.assertIsNone(result)
-            self.assertEqual(states.POWER_OFF, task.node['power_state'])
-            self.assertIsNone(task.node['target_power_state'])
-            self.assertIsNone(task.node['last_error'])
+                get_power_state_mock.assert_called_once_with(
+                    task.driver.power, task)
+                irmc_client.assert_called_once_with(
+                    irmc_power.scci.POWER_SOFT_OFF, async=False)
+                self.assertIsNone(result)
+                self.assertEqual(states.POWER_OFF, task.node['power_state'])
+                self.assertIsNone(task.node['target_power_state'])
+                self.assertIsNone(task.node['last_error'])
+                get_power_state_mock.reset_mock()
+                irmc_client.reset_mock()
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
@@ -430,18 +481,22 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                 get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            get_power_state_mock.return_value = states.ERROR
-            irmc_client = get_irmc_client_mock.return_value
-            result = vendor.graceful_shutdown(task)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                get_power_state_mock.return_value = states.ERROR
+                irmc_client = get_irmc_client_mock.return_value
+                result = vendor.graceful_shutdown(task)
 
-            get_power_state_mock.assert_called_once_with(
-                task.driver.power, task)
-            irmc_client.assert_called_once_with(irmc_power.scci.POWER_SOFT_OFF)
-            self.assertIsNone(result)
-            self.assertEqual(states.POWER_OFF, task.node['power_state'])
-            self.assertIsNone(task.node['target_power_state'])
-            self.assertIsNone(task.node['last_error'])
+                get_power_state_mock.assert_called_once_with(
+                    task.driver.power, task)
+                irmc_client.assert_called_once_with(
+                    irmc_power.scci.POWER_SOFT_OFF, async=False)
+                self.assertIsNone(result)
+                self.assertEqual(states.POWER_OFF, task.node['power_state'])
+                self.assertIsNone(task.node['target_power_state'])
+                self.assertIsNone(task.node['last_error'])
+                get_power_state_mock.reset_mock()
+                irmc_client.reset_mock()
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
@@ -452,50 +507,58 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                 get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            get_power_state_mock.return_value = states.POWER_ON
-            irmc_client = get_irmc_client_mock.return_value
-            irmc_client.side_effect = Exception()
-            irmc_power.scci.SCCIClientError = Exception
-            task.node['power_state'] = states.POWER_ON
-            task.node['last_error'] = None
-            self.assertRaises(exception.IRMCOperationError,
-                              vendor.graceful_shutdown,
-                              task)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                get_power_state_mock.return_value = states.POWER_ON
+                irmc_client = get_irmc_client_mock.return_value
+                irmc_client.side_effect = Exception()
+                irmc_power.scci.SCCIClientError = Exception
+                task.node['power_state'] = states.POWER_ON
+                task.node['last_error'] = None
+                self.assertRaises(exception.IRMCOperationError,
+                                  vendor.graceful_shutdown,
+                                  task)
 
-            get_power_state_mock.assert_called_once_with(
-                task.driver.power, task)
-            irmc_client.assert_called_once_with(irmc_power.scci.POWER_SOFT_OFF)
-            self.assertEqual(states.POWER_ON, task.node['power_state'])
-            self.assertIsNone(task.node['target_power_state'])
-            self.assertIsNotNone(task.node['last_error'])
+                get_power_state_mock.assert_called_once_with(
+                    task.driver.power, task)
+                irmc_client.assert_called_once_with(
+                    irmc_power.scci.POWER_SOFT_OFF, async=False)
+                self.assertEqual(states.POWER_ON, task.node['power_state'])
+                self.assertIsNone(task.node['target_power_state'])
+                self.assertIsNotNone(task.node['last_error'])
+                get_power_state_mock.reset_mock()
+                irmc_client.reset_mock()
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
     def test_raise_nmi(self, get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            irmc_client = get_irmc_client_mock.return_value
-            result = vendor.raise_nmi(task)
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                irmc_client = get_irmc_client_mock.return_value
+                result = vendor.raise_nmi(task)
 
-            irmc_client.assert_called_once_with(
-                irmc_power.scci.POWER_RAISE_NMI)
-            self.assertIsNone(result)
+                irmc_client.assert_called_once_with(
+                    irmc_power.scci.POWER_RAISE_NMI)
+                self.assertIsNone(result)
+                irmc_client.reset_mock()
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
     def test_raise_nmi_irmc_client_fail(self, get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
-            irmc_client = get_irmc_client_mock.return_value
-            irmc_client.side_effect = Exception()
-            irmc_power.scci.SCCIClientError = Exception
+            for vendor in (irmc_power.IRMCVendorPassthru(),
+                           irmc_power.IRMCDeployVendorPassthru()):
+                irmc_client = get_irmc_client_mock.return_value
+                irmc_client.side_effect = Exception()
+                irmc_power.scci.SCCIClientError = Exception
 
-            self.assertRaises(exception.IRMCOperationError,
-                              vendor.raise_nmi,
-                              task)
+                self.assertRaises(exception.IRMCOperationError,
+                                  vendor.raise_nmi,
+                                  task)
 
-            irmc_client.assert_called_once_with(
-                irmc_power.scci.POWER_RAISE_NMI)
+                irmc_client.assert_called_once_with(
+                    irmc_power.scci.POWER_RAISE_NMI)
+                irmc_client.reset_mock()
