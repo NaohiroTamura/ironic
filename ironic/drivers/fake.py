@@ -199,7 +199,7 @@ class FakeIRMCDriver(base.BaseDriver):
         self.power = irmc_power.IRMCPower()
         self.deploy = fake.FakeDeploy()
         self.management = irmc_management.IRMCManagement()
-        self.vendor = irmc_power.IRMCVendorPassthru()
+        self.vendor = irmc_power.IRMCPxeVendorPassthru()
 
 
 class FakeVirtualBoxDriver(base.BaseDriver):

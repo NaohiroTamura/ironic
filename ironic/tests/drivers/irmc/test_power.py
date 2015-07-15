@@ -266,8 +266,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_validate_graceful_shutdown(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 result = vendor.validate(
                     task, method='graceful_shutdown', http_method='POST')
                 mock_drvinfo.assert_called_once_with(task.node)
@@ -279,8 +280,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_validate_raise_nmi(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 result = vendor.validate(
                     task, method='raise_nmi', http_method='POST')
                 mock_drvinfo.assert_called_once_with(task.node)
@@ -292,8 +294,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_validate_unknown(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 result = vendor.validate(
                     task, method='unknown', http_method='POST')
                 self.assertFalse(mock_drvinfo.called)
@@ -305,8 +308,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_validate_graceful_shutdown_with_param(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 self.assertRaises(exception.InvalidParameterValue,
                                   vendor.validate,
                                   task,
@@ -320,8 +324,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_validate_raise_nmi_with_param(self, mock_drvinfo):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 self.assertRaises(exception.InvalidParameterValue,
                                   vendor.validate,
                                   task,
@@ -337,7 +342,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_validate_pxe_pass_deploy_info(self, mock_drvinfo, validate_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
+            vendor = irmc_power.IRMCPxeVendorPassthru()
             result = vendor.validate(
                 task, method='pass_deploy_info', foo='bar')
             self.assertFalse(mock_drvinfo.called)
@@ -352,7 +357,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_validate_irmc_pass_deploy_info(self, mock_drvinfo, validate_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCDeployVendorPassthru()
+            vendor = irmc_power.IRMCIscsiVendorPassthru()
             result = vendor.validate(
                 task, method='pass_deploy_info', foo='bar')
             self.assertFalse(mock_drvinfo.called)
@@ -368,7 +373,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                        validate_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCVendorPassthru()
+            vendor = irmc_power.IRMCPxeVendorPassthru()
             result = vendor.validate(
                 task, method='pass_bootloader_install_info', foo='bar')
             self.assertFalse(mock_drvinfo.called)
@@ -384,7 +389,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                         validate_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            vendor = irmc_power.IRMCDeployVendorPassthru()
+            vendor = irmc_power.IRMCIscsiVendorPassthru()
             result = vendor.validate(
                 task, method='pass_bootloader_install_info', foo='bar')
             self.assertFalse(mock_drvinfo.called)
@@ -401,8 +406,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 get_power_state_mock.return_value = states.POWER_ON
                 irmc_client = get_irmc_client_mock.return_value
                 result = vendor.graceful_shutdown(task)
@@ -427,8 +433,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                     get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 get_power_state_mock.side_effect = Exception()
                 irmc_client = get_irmc_client_mock.return_value
                 task.node['power_state'] = states.POWER_ON
@@ -455,8 +462,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                    get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 get_power_state_mock.return_value = states.POWER_ON
                 irmc_client = get_irmc_client_mock.return_value
                 result = vendor.graceful_shutdown(task)
@@ -481,8 +489,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                 get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 get_power_state_mock.return_value = states.ERROR
                 irmc_client = get_irmc_client_mock.return_value
                 result = vendor.graceful_shutdown(task)
@@ -507,8 +516,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                                                 get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 get_power_state_mock.return_value = states.POWER_ON
                 irmc_client = get_irmc_client_mock.return_value
                 irmc_client.side_effect = Exception()
@@ -534,8 +544,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_raise_nmi(self, get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 irmc_client = get_irmc_client_mock.return_value
                 result = vendor.raise_nmi(task)
 
@@ -549,8 +560,9 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
     def test_raise_nmi_irmc_client_fail(self, get_irmc_client_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
-            for vendor in (irmc_power.IRMCVendorPassthru(),
-                           irmc_power.IRMCDeployVendorPassthru()):
+            for vendor in (irmc_power.IRMCPxeVendorPassthru(),
+                           irmc_power.IRMCIscsiVendorPassthru(),
+                           irmc_power.IRMCAgentVendorPassthru()):
                 irmc_client = get_irmc_client_mock.return_value
                 irmc_client.side_effect = Exception()
                 irmc_power.scci.SCCIClientError = Exception

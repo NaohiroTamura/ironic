@@ -29,6 +29,7 @@ from ironic.common import states
 from ironic.conductor import task_manager
 from ironic.conductor import utils as manager_utils
 from ironic.drivers import base
+from ironic.drivers.modules import agent
 from ironic.drivers.modules import ipmitool
 from ironic.drivers.modules.irmc import common as irmc_common
 from ironic.drivers.modules.irmc import deploy as irmc_deploy
@@ -285,11 +286,16 @@ class VendorPassthru(base.VendorInterface):
                                                error=irmc_exception)
 
 
-class IRMCVendorPassthru(VendorPassthru, pxe.VendorPassthru):
+class IRMCPxeVendorPassthru(VendorPassthru, pxe.VendorPassthru):
     """Vendor-specific interfaces for iRMC power and pxe drivers."""
     pass
 
 
-class IRMCDeployVendorPassthru(VendorPassthru, irmc_deploy.VendorPassthru):
-    """Vendor-specific interfaces for iRMC power and deploy drivers."""
+class IRMCIscsiVendorPassthru(VendorPassthru, irmc_deploy.VendorPassthru):
+    """Vendor-specific interfaces for iRMC power and iscsi drivers."""
+    pass
+
+
+class IRMCAgentVendorPassthru(VendorPassthru, agent.AgentVendorInterface):
+    """Vendor-specific interfaces for iRMC power and agent drivers."""
     pass
