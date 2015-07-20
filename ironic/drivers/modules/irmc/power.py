@@ -16,24 +16,19 @@ iRMC Power Driver using the Base Server Profile
 """
 from oslo_config import cfg
 from oslo_log import log as logging
-from oslo_utils import excutils
 from oslo_utils import importutils
 
 from ironic.common import boot_devices
 from ironic.common import exception
 from ironic.common.i18n import _
 from ironic.common.i18n import _LE
-from ironic.common.i18n import _LI
-from ironic.common.i18n import _LW
 from ironic.common import states
 from ironic.conductor import task_manager
 from ironic.conductor import utils as manager_utils
 from ironic.drivers import base
-from ironic.drivers.modules import agent
 from ironic.drivers.modules import ipmitool
 from ironic.drivers.modules.irmc import common as irmc_common
 from ironic.drivers.modules.irmc import deploy as irmc_deploy
-from ironic.drivers.modules import pxe
 
 scci = importutils.try_import('scciclient.irmc.scci')
 
@@ -168,134 +163,3 @@ class IRMCPower(base.PowerInterface):
             _set_power_state(task, states.REBOOT)
         elif current_pstate == states.POWER_OFF:
             _set_power_state(task, states.POWER_ON)
-
-
-class VendorPassthru(base.VendorInterface):
-    """Vendor-specific interfaces for iRMC power drivers."""
-
-    def get_properties(self):
-        irmc_prop = irmc_common.COMMON_PROPERTIES
-        super_prop = super(VendorPassthru, self).get_properties()
-        return dict(list(irmc_prop.items()) + list(super_prop.items()))
-
-    def validate(self, task, method, **kwargs):
-        """Validate vendor-specific actions.
-
-        Checks if a valid vendor passthru method was passed and validates
-        the parameters for the vendor passthru method.
-
-        :param task: a TaskManager instance containing the node to act on.
-        :param method: method to be validated.
-        :param kwargs: kwargs containing the vendor passthru method's
-            parameters.
-        :raises: InvalidParameterValue, if any of the parameters have invalid
-            value.
-        """
-        if method in ('graceful_shutdown', 'raise_nmi'):
-            if {k: v for (k, v) in kwargs.items() if k is not 'http_method'}:
-                raise exception.InvalidParameterValue(_(
-                    "Method '%s' doesn't take any parameter.") % method)
-            irmc_common.parse_driver_info(task.node)
-        else:
-            super(VendorPassthru, self).validate(task, method, **kwargs)
-
-    @base.passthru(['POST'])
-    @task_manager.require_exclusive_lock
-    def graceful_shutdown(self, task, **kwargs):
-        """Turns the server shutdown gracefully
-
-        :param task: a TaskManager instance containing the node to act on.
-        :raises: IRMCOperationError on an error from SCCI
-        :raises: other exceptions by the node's power driver if something
-                 wrong occurred during the power action.
-        """
-        node = task.node
-
-        try:
-            curr_state = task.driver.power.get_power_state(task)
-        except Exception as e:
-            with excutils.save_and_reraise_exception():
-                node.last_error = _(
-                    "Failed to get the current power state during graceful "
-                    "shutdown. Error: %(error)s") % {'error': e}
-                node.target_power_state = states.NOSTATE
-                node.save()
-
-        if curr_state == states.POWER_OFF:
-            node.last_error = None
-            node.power_state = states.POWER_OFF
-            node.target_power_state = states.NOSTATE
-            node.save()
-            LOG.warn(_LW("Not going to change node power state because "
-                         "current state is already POWER_OFF."))
-            return
-
-        if curr_state == states.ERROR:
-            # be optimistic and continue action
-            LOG.warn(_LW("Driver returns ERROR power state for node %s."),
-                     node.uuid)
-
-        node.target_power_state = states.POWER_OFF
-        node.last_error = None
-        node.save()
-
-        irmc_client = irmc_common.get_irmc_client(node)
-
-        try:
-            irmc_client(scci.POWER_SOFT_OFF, async=False)
-
-        except scci.SCCIClientError as irmc_exception:
-            node.last_error = _(
-                "iRMC graceful_shutdown failed for node %(node_id)s. "
-                "Error: %(error)s") % {'node_id': node.uuid,
-                                       'error': irmc_exception}
-            LOG.error(node.last_error)
-            operation = _('iRMC graceful_shutdown')
-            raise exception.IRMCOperationError(operation=operation,
-                                               error=irmc_exception)
-        else:
-            node.power_state = states.POWER_OFF
-            LOG.info(_LI('iRMC graceful_shutdown successfully set node '
-                         '%(node)s power state to POWER_OFF.'),
-                     {'node': node.uuid})
-        finally:
-            node.target_power_state = states.NOSTATE
-            node.save()
-
-    @base.passthru(['POST'])
-    @task_manager.require_exclusive_lock
-    def raise_nmi(self, task, **kwargs):
-        """Pulse the NMI (Non Maskable Interrupt)
-
-        :param task: a TaskManager instance containing the node to act on.
-        :raises: IRMCOperationError on an error from SCCI
-        """
-
-        node = task.node
-        irmc_client = irmc_common.get_irmc_client(node)
-
-        try:
-            irmc_client(scci.POWER_RAISE_NMI)
-
-        except scci.SCCIClientError as irmc_exception:
-            LOG.error(_LE("iRMC raise_nmi failed"
-                          " for node %(node_id)s with error: %(error)s"),
-                      {'node_id': node.uuid, 'error': irmc_exception})
-            operation = _('iRMC raise_nmi')
-            raise exception.IRMCOperationError(operation=operation,
-                                               error=irmc_exception)
-
-
-class IRMCPxeVendorPassthru(VendorPassthru, pxe.VendorPassthru):
-    """Vendor-specific interfaces for iRMC power and pxe drivers."""
-    pass
-
-
-class IRMCIscsiVendorPassthru(VendorPassthru, irmc_deploy.VendorPassthru):
-    """Vendor-specific interfaces for iRMC power and iscsi drivers."""
-    pass
-
-
-class IRMCAgentVendorPassthru(VendorPassthru, agent.AgentVendorInterface):
-    """Vendor-specific interfaces for iRMC power and agent drivers."""
-    pass

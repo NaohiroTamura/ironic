@@ -24,6 +24,7 @@ from ironic.drivers.modules import ipmitool
 from ironic.drivers.modules.irmc import deploy
 from ironic.drivers.modules.irmc import management
 from ironic.drivers.modules.irmc import power
+from ironic.drivers.modules.irmc import vendor
 
 
 class IRMCVirtualMediaIscsiDriver(base.BaseDriver):
@@ -46,7 +47,7 @@ class IRMCVirtualMediaIscsiDriver(base.BaseDriver):
         self.deploy = deploy.IRMCVirtualMediaIscsiDeploy()
         self.console = ipmitool.IPMIShellinaboxConsole()
         self.management = management.IRMCManagement()
-        self.vendor = power.IRMCIscsiVendorPassthru()
+        self.vendor = vendor.IRMCIscsiVendorPassthru()
 
 
 class IRMCVirtualMediaAgentDriver(base.BaseDriver):
@@ -69,4 +70,4 @@ class IRMCVirtualMediaAgentDriver(base.BaseDriver):
         self.deploy = deploy.IRMCVirtualMediaAgentDeploy()
         self.console = ipmitool.IPMIShellinaboxConsole()
         self.management = management.IRMCManagement()
-        self.vendor = power.IRMCAgentVendorPassthru()
+        self.vendor = vendor.IRMCAgentVendorPassthru()
