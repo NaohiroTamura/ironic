@@ -17,7 +17,6 @@ Test class for iRMC Vendor Driver
 import time
 
 import mock
-from oslo_utils import importutils
 
 from ironic.common import exception
 from ironic.common import states
@@ -33,8 +32,6 @@ from ironic.tests.db import utils as db_utils
 from ironic.tests.objects import utils as obj_utils
 
 INFO_DICT = db_utils.get_test_irmc_info()
-
-scci = importutils.try_import('scciclient.irmc.scci')
 
 
 class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
@@ -77,12 +74,12 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                     mock.Mock(**{'get.return_value': 2})]
 
                 result = irmc_vendor._vendor_power_action(
-                    task, scci.POWER_SOFT_OFF)
+                    task, irmc_vendor.scci.POWER_SOFT_OFF)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
-                    irmc_power.scci.POWER_SOFT_OFF)
+                    irmc_vendor.scci.POWER_SOFT_OFF)
                 (dhcp_factory_mock.return_value.provider
                  .get_ip_addresses.assert_called_once_with)(task)
                 snmpclient_mock.assert_has_calls(
@@ -128,12 +125,12 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                     mock.Mock(**{'get.return_value': 8})]
 
                 result = irmc_vendor._vendor_power_action(
-                    task, scci.POWER_RAISE_NMI)
+                    task, irmc_vendor.scci.POWER_RAISE_NMI)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
-                    irmc_power.scci.POWER_RAISE_NMI)
+                    irmc_vendor.scci.POWER_RAISE_NMI)
                 (dhcp_factory_mock.return_value.provider
                  .get_ip_addresses.assert_called_once_with)(task)
                 snmpclient_mock.assert_has_calls(
@@ -169,7 +166,7 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                 self.assertRaises(exception.InvalidParameterValue,
                                   irmc_vendor._vendor_power_action,
                                   task,
-                                  scci.POWER_SOFT_OFF)
+                                  irmc_vendor.scci.POWER_SOFT_OFF)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
@@ -198,7 +195,7 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                 task.node['last_error'] = None
 
                 result = irmc_vendor._vendor_power_action(
-                    task, scci.POWER_SOFT_OFF)
+                    task, irmc_vendor.scci.POWER_SOFT_OFF)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
@@ -231,7 +228,7 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                 self.assertRaises(exception.PowerStateFailure,
                                   irmc_vendor._vendor_power_action,
                                   task,
-                                  scci.POWER_SOFT_OFF)
+                                  irmc_vendor.scci.POWER_SOFT_OFF)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
@@ -260,19 +257,19 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                 get_power_state_mock.return_value = states.POWER_ON
                 irmc_client = get_irmc_client_mock.return_value
                 irmc_client.side_effect = Exception()
-                irmc_power.scci.SCCIClientError = Exception
+                irmc_vendor.scci.SCCIClientError = Exception
                 task.node['power_state'] = states.POWER_ON
                 task.node['last_error'] = None
 
                 self.assertRaises(exception.IRMCOperationError,
                                   irmc_vendor._vendor_power_action,
                                   task,
-                                  scci.POWER_SOFT_OFF)
+                                  irmc_vendor.scci.POWER_SOFT_OFF)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
-                    irmc_power.scci.POWER_SOFT_OFF)
+                    irmc_vendor.scci.POWER_SOFT_OFF)
                 self.assertFalse(dhcp_factory_mock.called)
                 self.assertEqual(states.POWER_ON, task.node['power_state'])
                 self.assertIsNone(task.node['target_power_state'])
@@ -309,12 +306,12 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                 self.assertRaises(exception.IRMCOperationError,
                                   irmc_vendor._vendor_power_action,
                                   task,
-                                  scci.POWER_SOFT_OFF)
+                                  irmc_vendor.scci.POWER_SOFT_OFF)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
-                    irmc_power.scci.POWER_SOFT_OFF)
+                    irmc_vendor.scci.POWER_SOFT_OFF)
                 (dhcp_factory_mock.return_value.provider
                  .get_ip_addresses.assert_called_once_with)(task)
                 self.assertFalse(snmpclient_mock.called)
@@ -359,12 +356,12 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                 self.assertRaises(exception.IRMCOperationError,
                                   irmc_vendor._vendor_power_action,
                                   task,
-                                  scci.POWER_SOFT_OFF)
+                                  irmc_vendor.scci.POWER_SOFT_OFF)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
-                    irmc_power.scci.POWER_SOFT_OFF)
+                    irmc_vendor.scci.POWER_SOFT_OFF)
                 (dhcp_factory_mock.return_value.provider
                  .get_ip_addresses.assert_called_once_with)(task)
                 snmpclient_mock.assert_called_once_with(
@@ -413,12 +410,12 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                 self.assertRaises(exception.IRMCOperationError,
                                   irmc_vendor._vendor_power_action,
                                   task,
-                                  scci.POWER_SOFT_OFF)
+                                  irmc_vendor.scci.POWER_SOFT_OFF)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
-                    irmc_power.scci.POWER_SOFT_OFF)
+                    irmc_vendor.scci.POWER_SOFT_OFF)
                 (dhcp_factory_mock.return_value.provider
                  .get_ip_addresses.assert_called_once_with)(task)
                 snmpclient_mock.assert_has_calls(
@@ -467,12 +464,12 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                 self.assertRaises(exception.IRMCOperationError,
                                   irmc_vendor._vendor_power_action,
                                   task,
-                                  scci.POWER_SOFT_OFF)
+                                  irmc_vendor.scci.POWER_SOFT_OFF)
 
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
-                    irmc_power.scci.POWER_SOFT_OFF)
+                    irmc_vendor.scci.POWER_SOFT_OFF)
                 (dhcp_factory_mock.return_value.provider
                  .get_ip_addresses.assert_called_once_with)(task)
                 snmpclient_mock.assert_has_calls(
@@ -671,7 +668,7 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                 vendor.graceful_shutdown(task)
 
                 _vendor_power_action_mock.assert_called_once_with(
-                    task, scci.POWER_SOFT_OFF)
+                    task, irmc_vendor.scci.POWER_SOFT_OFF)
                 _vendor_power_action_mock.reset_mock()
 
     @mock.patch.object(irmc_vendor, '_vendor_power_action', spec_set=True,
@@ -685,5 +682,5 @@ class IRMCVendorPassthruTestCase(db_base.DbTestCase):
                 vendor.raise_nmi(task)
 
                 _vendor_power_action_mock.assert_called_once_with(
-                    task, scci.POWER_RAISE_NMI)
+                    task, irmc_vendor.scci.POWER_RAISE_NMI)
                 _vendor_power_action_mock.reset_mock()

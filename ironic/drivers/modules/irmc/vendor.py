@@ -175,10 +175,18 @@ opts = [
 
 CONF.register_opts(opts, group='irmc')
 
-VENDOR_ACTION = {
-    scci.POWER_SOFT_OFF: 'graceful shutdown',
-    scci.POWER_RAISE_NMI: 'raise nmi',
-}
+# note(naohirot):
+# In order to pass Jenkins CI, 'scci' null check is required to stop python
+# parser error.
+# Runtime error never happen, because 'scci' is assured to be non null by
+# driver's constructor.
+if scci:
+    VENDOR_ACTION = {
+        scci.POWER_SOFT_OFF: 'graceful shutdown',
+        scci.POWER_RAISE_NMI: 'raise nmi',
+    }
+else:
+    VENDOR_ACTION = {}
 
 
 def _vendor_power_action(task, action):
@@ -287,7 +295,7 @@ def _vendor_power_action(task, action):
                          'times': i})
             time.sleep(interval)
 
-        # exceeded the CONF.irmc.graceful_shutdown_timeout
+        # exceeded the CONF.irmc.state_transition_timeout
         node.last_error = _(
             "iRMC %(action)s failed for node %(node_id)s. "
             "Error: OS %(ip_addr)s failed to shutdown within "
