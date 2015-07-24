@@ -1008,6 +1008,26 @@
 # (string value)
 #sensor_method=ipmitool
 
+# SNMP protocol version, either "v1", "v2c" or "v3" (string
+# value)
+#snmp_version=v2c
+
+# SNMP port (integer value)
+#snmp_port=161
+
+# SNMP community. Required for versions "v1", "v2c" (string
+# value)
+#snmp_community=public
+
+# SNMP security name. Required for version "v3" (string value)
+#snmp_security=
+
+# SNMP polling interval in second (integer value)
+#snmp_polling_interval=10
+
+# State transition timeout in second (integer value)
+#state_transition_timeout=600
+
 
 #
 # Options defined in ironic.drivers.modules.irmc.deploy
@@ -1035,31 +1055,6 @@
 
 # Domain name of remote_image_user_name (string value)
 #remote_image_user_domain=
-
-
-#
-# Options defined in ironic.drivers.modules.irmc.vendor
-#
-
-# SNMP protocol version, either "v1", "v2c" or "v3" (string
-# value)
-#snmp_version=v2c
-
-# SNMP port (integer value)
-#snmp_port=161
-
-# SNMP community. Required for versions "v1", "v2c" (string
-# value)
-#snmp_community=public
-
-# SNMP security name. Required for version "v3" (string value)
-#snmp_security=
-
-# SNMP polling interval in second (integer value)
-#snmp_polling_interval=10
-
-# State transition timeout in second (integer value)
-#state_transition_timeout=600
 
 
 [keystone]

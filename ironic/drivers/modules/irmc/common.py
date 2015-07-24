@@ -40,6 +40,24 @@ opts = [
                default='ipmitool',
                help=_('Sensor data retrieval method, either '
                       '"ipmitool" or "scci"')),
+    cfg.StrOpt('snmp_version',
+               default='v2c',
+               help='SNMP protocol version, either "v1", "v2c" or "v3"'),
+    cfg.IntOpt('snmp_port',
+               default=161,
+               help='SNMP port'),
+    cfg.StrOpt('snmp_community',
+               default='public',
+               help='SNMP community. Required for versions "v1", "v2c"'),
+    cfg.StrOpt('snmp_security',
+               default='',
+               help='SNMP security name. Required for version "v3"'),
+    cfg.IntOpt('snmp_polling_interval',
+               default=10,
+               help='SNMP polling interval in second'),
+    cfg.IntOpt('state_transition_timeout',
+               default=600,
+               help='State transition timeout in second'),
 ]
 
 CONF = cfg.CONF

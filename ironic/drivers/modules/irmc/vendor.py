@@ -21,7 +21,6 @@ from oslo_log import log as logging
 from oslo_utils import excutils
 from oslo_utils import importutils
 
-from ironic.common import dhcp_factory
 from ironic.common import exception
 from ironic.common.i18n import _
 from ironic.common.i18n import _LI
@@ -41,90 +40,7 @@ CONF = cfg.CONF
 
 LOG = logging.getLogger(__name__)
 
-
-"""
---#FILENAME        "SC2.MIB"
---#DESCRIPTION     "ServerControl MIB, edition 2 - for systemboard and server
-                    hardware monitoring"
---#REVISION        "7.10.08"
---#VENDOR          "Fujitsu Technology Solutions"
---#TRAP-ENTERPRISE sc2Notifications
---#TRAP-VARIABLES  sc2NotificationsTrapInfo
-
--- Copyright (C) Fujitsu Technology Solutions 2009-2015
--- All rights reserved
-
--- ----------------------------------------------------------------------------
---
--- TABLE        sc2ServerTable
--- STATUS       mandatory
--- DESCRIPTION  "Table containing information about the available servers"
---
---      sc2ServerTable: 1.3.6.1.4.1.231.2.10.2.2.10.4.1
---
--- ----------------------------------------------------------------------------
-sc2ServerTable OBJECT-TYPE
-    SYNTAX       SEQUENCE OF Sc2Servers
-    ACCESS       not-accessible
-    STATUS       mandatory
-    DESCRIPTION  "Table containing information about the available servers"
-    ::= { sc2ServerInformation 1 }
-
-sc2Servers OBJECT-TYPE
-    SYNTAX       Sc2Servers
-    ACCESS       not-accessible
-    STATUS       mandatory
-    DESCRIPTION  ""
-    INDEX   { sc2srvUnitId }
-    ::= { sc2ServerTable 1 }
-
-Sc2Servers ::= SEQUENCE
-{
-    sc2srvUnitId
-        INTEGER,
-    sc2srvPhysicalMemory
-        INTEGER,
-    sc2srvLastBootResult
-        INTEGER,
-    sc2srvCurrentBootStatus
-        INTEGER,
-    sc2srvShutdownCommand
-        INTEGER,
-    sc2srvShutdownDelay
-        INTEGER,
-    sc2srvUUID
-        DisplayString,
-    sc2srvPhysicalMemoryOs
-        INTEGER,
-    sc2srvUUIDWireFormat
-        DisplayString,
-    sc2srvOsPlatform
-        INTEGER,
-    sc2srvBiosVersion
-        DisplayString
-}
-
-sc2srvCurrentBootStatus OBJECT-TYPE
-    SYNTAX       INTEGER
-    {
-        unknown(1),
-        off(2),
-        no-boot-cpu(3),
-        self-test(4),
-        setup(5),
-        os-boot(6),
-        diagnostic-boot(7),
-        os-running(8),
-        diagnostic-running(9),
-        os-shutdown(10),
-        diagnostic-shutdown(11),
-        reset(12)
-    }
-    ACCESS       read-only
-    STATUS       mandatory
-    DESCRIPTION  "Status of the current boot"
-    ::= { sc2Servers 4 }
-"""
+# SC2.mib: sc2srvCurrentBootStatus
 BOOT_STATUS_OID = "1.3.6.1.4.1.231.2.10.2.2.10.4.1.1.4.1"
 BOOT_STATUS = [
     None,
@@ -142,51 +58,10 @@ BOOT_STATUS = [
     'reset',                # reset(12)
 ]
 
-"""
-DISMAN-EVENT-MIB
-
-sysUpTimeInstance OBJECT IDENTIFIER ::= { sysUpTime 0 }
-"""
-SYSUPTIME_OID = "1.3.6.1.2.1.1.3.0"
-
-opts = [
-    # note(naohirot):
-    # SNMP v3 requires iRMC firmware 7.82F or above.
-    # 7.82F has been released on May 1st, 2015.
-    cfg.StrOpt('snmp_version',
-               default='v2c',
-               help='SNMP protocol version, either "v1", "v2c" or "v3"'),
-    cfg.IntOpt('snmp_port',
-               default=161,
-               help='SNMP port'),
-    cfg.StrOpt('snmp_community',
-               default='public',
-               help='SNMP community. Required for versions "v1", "v2c"'),
-    cfg.StrOpt('snmp_security',
-               default='',
-               help='SNMP security name. Required for version "v3"'),
-    cfg.IntOpt('snmp_polling_interval',
-               default=10,
-               help='SNMP polling interval in second'),
-    cfg.IntOpt('state_transition_timeout',
-               default=600,
-               help='State transition timeout in second'),
-]
-
-CONF.register_opts(opts, group='irmc')
-
-# note(naohirot):
-# In order to pass Jenkins CI, 'scci' null check is required to stop python
-# parser error.
-# Runtime error never happen, because 'scci' is assured to be non null by
-# driver's constructor.
-if scci:
-    VENDOR_ACTION = {
-        scci.POWER_SOFT_OFF: 'graceful shutdown',
-        scci.POWER_RAISE_NMI: 'raise nmi',
-    }
-else:
-    VENDOR_ACTION = {}
+VENDOR_ACTION = {
+    scci.POWER_SOFT_OFF: 'graceful shutdown',
+    scci.POWER_RAISE_NMI: 'raise nmi',
+}
 
 
 def _vendor_power_action(task, action):
@@ -194,11 +69,10 @@ def _vendor_power_action(task, action):
 
     :param task: a TaskManager instance containing the node to act on.
     :param action: a SCCI command
-    :raises: InvalidParameterValue when the wrong state is specified
-             or the wrong driver info is specified.
+    :raises: IRMCOperationError, iRMC and SCCI specific error
+    :raises: PowerStateFailure, power status retrieval error
     :raises: other exceptions by the node's power driver if something
              wrong occurred during the power action.
-
     """
     node = task.node
     target_state = (states.POWER_ON if action == scci.POWER_RAISE_NMI
@@ -232,6 +106,7 @@ def _vendor_power_action(task, action):
     else:  # curr_state == states.ERROR
         node.last_error = _("Power driver returned ERROR state "
                             "while trying to sync power state.")
+        node.power_state = states.ERROR
         node.target_power_state = states.NOSTATE
         node.save()
         raise exception.PowerStateFailure(node.last_error)
@@ -257,77 +132,15 @@ def _vendor_power_action(task, action):
         _LI('iRMC %(action)s has initiatted for %(node_id)s.'),
         {'action': VENDOR_ACTION[action], 'node_id': node.uuid})
 
-    # get address of the node OS instance
-    api = dhcp_factory.DHCPFactory().provider
-    ip_addrs = api.get_ip_addresses(task)
-    if not ip_addrs:
-        node.last_error = _(
-            "iRMC %(action)s failed for node %(node_id)s. "
-            "Error: %(error)s") % {'action': VENDOR_ACTION[action],
-                                   'node_id': node.uuid,
-                                   'error': "ip address not found"}
-        node.target_power_state = states.NOSTATE
-        node.save()
-
-        LOG.error(node.last_error)
-        error = _("ip address not found")
-        raise exception.IRMCOperationError(
-            operation=VENDOR_ACTION[action], error=error)
-
-    # check if the node OS instance is alive or shut down
-    snmp_node = snmp.SNMPClient(ip_addrs[0],
-                                CONF.irmc.snmp_port,
-                                CONF.irmc.snmp_version,
-                                CONF.irmc.snmp_community,
-                                CONF.irmc.snmp_security)
-    interval = CONF.irmc.snmp_polling_interval
-    max_retry = int(CONF.irmc.state_transition_timeout / interval)
-    try:
-        for i in range(0, max_retry):
-            sysuptime = snmp_node.get(SYSUPTIME_OID)
-            LOG.debug("iRMC %(action)s is on going at node "
-                      "%(node_id)s and %(ip_addr)s. "
-                      "sysUpTime is %(sysuptime)s at %(times)s."
-                      % {'action': VENDOR_ACTION[action],
-                         'node_id': node.uuid,
-                         'ip_addr': ip_addrs[0],
-                         'sysuptime': sysuptime,
-                         'times': i})
-            time.sleep(interval)
-
-        # exceeded the CONF.irmc.state_transition_timeout
-        node.last_error = _(
-            "iRMC %(action)s failed for node %(node_id)s. "
-            "Error: OS %(ip_addr)s failed to shutdown within "
-            " %(timeout)i secs.") % {
-                'action': VENDOR_ACTION[action],
-                'node_id': node.uuid,
-                'ip_addr': ip_addrs[0],
-                'timeout': 10 * max_retry}
-
-        node.target_power_state = states.NOSTATE
-        node.save()
-
-        LOG.error(node.last_error)
-        error = _('OS shutdown timeout')
-        raise exception.IRMCOperationError(
-            operation=VENDOR_ACTION[action], error=error)
-
-    except exception.SNMPFailure:
-        # the node OS instance has been shutdown
-        LOG.debug("ServerView SNMP agent stopped at %(ip_addr)s "
-                  "on %(node_id)s.",
-                  {'ip_addr': ip_addrs[0],
-                   'node_id': node.uuid})
-
-    # doublely check if iRMC acknowledged the shutdown of
-    # the node OS instance or not
+    # check if iRMC acknowledged the shutdown of the node OS instance or not
     snmp_irmc = snmp.SNMPClient(node.driver_info['irmc_address'],
                                 CONF.irmc.snmp_port,
                                 CONF.irmc.snmp_version,
                                 CONF.irmc.snmp_community,
                                 CONF.irmc.snmp_security)
     bootstatus_value = None
+    interval = CONF.irmc.snmp_polling_interval
+    max_retry = int(CONF.irmc.state_transition_timeout / interval)
     try:
         for i in range(0, max_retry):
             bootstatus_value = snmp_irmc.get(BOOT_STATUS_OID)
@@ -350,6 +163,7 @@ def _vendor_power_action(task, action):
             "Error: %(error)s") % {'action': VENDOR_ACTION[action],
                                    'node_id': node.uuid,
                                    'error': snmp_exception}
+        node.power_state = states.ERROR
         node.target_power_state = states.NOSTATE
         node.save()
 
@@ -369,6 +183,7 @@ def _vendor_power_action(task, action):
                 'action': VENDOR_ACTION[action],
                 'node_id': node.uuid,
                 'bootstatus': BOOT_STATUS[bootstatus_value]}
+        node.power_state = states.ERROR
         node.target_power_state = states.NOSTATE
         node.save()
 
@@ -427,6 +242,7 @@ class VendorPassthru(base.VendorInterface):
 
         :param task: a TaskManager instance containing the node to act on.
         :raises: IRMCOperationError, iRMC and SCCI specific error
+        :raises: PowerStateFailure, power status retrieval error
         :raises: other exceptions by the node's power driver if something
                  wrong occurred during the power action.
         """
@@ -439,6 +255,7 @@ class VendorPassthru(base.VendorInterface):
 
         :param task: a TaskManager instance containing the node to act on.
         :raises: IRMCOperationError, iRMC and SCCI specific error
+        :raises: PowerStateFailure, power status retrieval error
         :raises: other exceptions by the node's power driver if something
                  wrong occurred during the power action.
         """

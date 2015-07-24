@@ -46,8 +46,6 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
     @mock.patch.object(time, 'sleep', spec_set=True, autospec=True)
     @mock.patch('ironic.drivers.modules.irmc.vendor.snmp.SNMPClient',
                 spec_set=True, autospec=True)
-    @mock.patch('ironic.drivers.modules.irmc.vendor.dhcp_factory.DHCPFactory',
-                spec_set=True, autospec=True)
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
     @mock.patch.object(irmc_power.IRMCPower, 'get_power_state', spec_set=True,
@@ -55,7 +53,6 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
     def test__vendor_power_action_soft_power_off(self,
                                                  get_power_state_mock,
                                                  get_irmc_client_mock,
-                                                 dhcp_factory_mock,
                                                  snmpclient_mock,
                                                  sleep_mock):
         with task_manager.acquire(self.context, self.node.uuid,
@@ -66,12 +63,8 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                            irmc_vendor.IRMCAgentVendorPassthru()):
                 get_power_state_mock.return_value = states.POWER_ON
                 irmc_client = get_irmc_client_mock.return_value
-                dhcp_factory_mock.return_value = mock.Mock(
-                    **{'provider.get_ip_addresses.return_value': ["5.6.7.8"]})
-                snmpclient_mock.side_effect = [
-                    mock.Mock(**{'get.side_effect': exception.SNMPFailure(
-                        operation="GET", error="error")}),
-                    mock.Mock(**{'get.return_value': 2})]
+                snmpclient_mock.return_value = mock.Mock(
+                    **{'get.return_value': 2})
 
                 result = irmc_vendor._vendor_power_action(
                     task, irmc_vendor.scci.POWER_SOFT_OFF)
@@ -80,24 +73,18 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
                     irmc_vendor.scci.POWER_SOFT_OFF)
-                (dhcp_factory_mock.return_value.provider
-                 .get_ip_addresses.assert_called_once_with)(task)
-                snmpclient_mock.assert_has_calls(
-                    [mock.call("5.6.7.8", 161, "v2c", "public", ''),
-                     mock.call("1.2.3.4", 161, "v2c", "public", '')])
+                snmpclient_mock.assert_called_once_with(
+                    "1.2.3.4", 161, "v2c", "public", '')
                 self.assertIsNone(result)
                 self.assertEqual(states.POWER_OFF, task.node['power_state'])
                 self.assertIsNone(task.node['target_power_state'])
                 self.assertIsNone(task.node['last_error'])
                 get_power_state_mock.reset_mock()
                 irmc_client.reset_mock()
-                dhcp_factory_mock.reset_mock()
                 snmpclient_mock.reset_mock()
 
     @mock.patch.object(time, 'sleep', spec_set=True, autospec=True)
     @mock.patch('ironic.drivers.modules.irmc.vendor.snmp.SNMPClient',
-                spec_set=True, autospec=True)
-    @mock.patch('ironic.drivers.modules.irmc.vendor.dhcp_factory.DHCPFactory',
                 spec_set=True, autospec=True)
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
@@ -106,7 +93,6 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
     def test__vendor_power_action_power_raise_nmi(self,
                                                   get_power_state_mock,
                                                   get_irmc_client_mock,
-                                                  dhcp_factory_mock,
                                                   snmpclient_mock,
                                                   sleep_mock):
         with task_manager.acquire(self.context, self.node.uuid,
@@ -117,12 +103,8 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                            irmc_vendor.IRMCAgentVendorPassthru()):
                 get_power_state_mock.return_value = states.POWER_ON
                 irmc_client = get_irmc_client_mock.return_value
-                dhcp_factory_mock.return_value = mock.Mock(
-                    **{'provider.get_ip_addresses.return_value': ["5.6.7.8"]})
-                snmpclient_mock.side_effect = [
-                    mock.Mock(**{'get.side_effect': exception.SNMPFailure(
-                        operation="GET", error="error")}),
-                    mock.Mock(**{'get.return_value': 8})]
+                snmpclient_mock.return_value = mock.Mock(
+                    **{'get.return_value': 8})
 
                 result = irmc_vendor._vendor_power_action(
                     task, irmc_vendor.scci.POWER_RAISE_NMI)
@@ -131,18 +113,14 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
                     irmc_vendor.scci.POWER_RAISE_NMI)
-                (dhcp_factory_mock.return_value.provider
-                 .get_ip_addresses.assert_called_once_with)(task)
-                snmpclient_mock.assert_has_calls(
-                    [mock.call("5.6.7.8", 161, "v2c", "public", ''),
-                     mock.call("1.2.3.4", 161, "v2c", "public", '')])
+                snmpclient_mock.assert_called_once_with(
+                    "1.2.3.4", 161, "v2c", "public", '')
                 self.assertIsNone(result)
                 self.assertEqual(states.POWER_ON, task.node['power_state'])
                 self.assertIsNone(task.node['target_power_state'])
                 self.assertIsNone(task.node['last_error'])
                 get_power_state_mock.reset_mock()
                 irmc_client.reset_mock()
-                dhcp_factory_mock.reset_mock()
                 snmpclient_mock.reset_mock()
 
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
@@ -233,13 +211,13 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                 get_power_state_mock.assert_called_once_with(
                     task.driver.power, task)
                 self.assertFalse(irmc_client.called)
-                self.assertEqual(states.POWER_ON, task.node['power_state'])
+                self.assertEqual(states.ERROR, task.node['power_state'])
                 self.assertIsNone(task.node['target_power_state'])
                 self.assertIsNotNone(task.node['last_error'])
                 get_power_state_mock.reset_mock()
                 irmc_client.reset_mock()
 
-    @mock.patch('ironic.drivers.modules.irmc.vendor.dhcp_factory.DHCPFactory',
+    @mock.patch('ironic.drivers.modules.irmc.vendor.snmp.SNMPClient',
                 spec_set=True, autospec=True)
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
@@ -248,7 +226,7 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
     def test__vendor_power_action_irmc_client_fail(self,
                                                    get_power_state_mock,
                                                    get_irmc_client_mock,
-                                                   dhcp_factory_mock):
+                                                   snmpclient_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=False) as task:
             for vendor in (irmc_vendor.IRMCPxeVendorPassthru(),
@@ -270,114 +248,16 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
                     irmc_vendor.scci.POWER_SOFT_OFF)
-                self.assertFalse(dhcp_factory_mock.called)
-                self.assertEqual(states.POWER_ON, task.node['power_state'])
-                self.assertIsNone(task.node['target_power_state'])
-                self.assertIsNotNone(task.node['last_error'])
-                get_power_state_mock.reset_mock()
-                irmc_client.reset_mock()
-                dhcp_factory_mock.reset_mock()
-
-    @mock.patch('ironic.drivers.modules.irmc.vendor.snmp.SNMPClient',
-                spec_set=True, autospec=True)
-    @mock.patch('ironic.drivers.modules.irmc.vendor.dhcp_factory.DHCPFactory',
-                spec_set=True, autospec=True)
-    @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
-                       autospec=True)
-    @mock.patch.object(irmc_power.IRMCPower, 'get_power_state', spec_set=True,
-                       autospec=True)
-    def test__vendor_power_action_dhcp_ip_none(self,
-                                               get_power_state_mock,
-                                               get_irmc_client_mock,
-                                               dhcp_factory_mock,
-                                               snmpclient_mock):
-        with task_manager.acquire(self.context, self.node.uuid,
-                                  shared=False) as task:
-            for vendor in (irmc_vendor.IRMCPxeVendorPassthru(),
-                           irmc_vendor.IRMCIscsiVendorPassthru(),
-                           irmc_vendor.IRMCAgentVendorPassthru()):
-                get_power_state_mock.return_value = states.POWER_ON
-                irmc_client = get_irmc_client_mock.return_value
-                dhcp_factory_mock.return_value = mock.Mock(
-                    **{'provider.get_ip_addresses.return_value': []})
-                task.node['power_state'] = states.POWER_ON
-                task.node['last_error'] = None
-
-                self.assertRaises(exception.IRMCOperationError,
-                                  irmc_vendor._vendor_power_action,
-                                  task,
-                                  irmc_vendor.scci.POWER_SOFT_OFF)
-
-                get_power_state_mock.assert_called_once_with(
-                    task.driver.power, task)
-                irmc_client.assert_called_once_with(
-                    irmc_vendor.scci.POWER_SOFT_OFF)
-                (dhcp_factory_mock.return_value.provider
-                 .get_ip_addresses.assert_called_once_with)(task)
                 self.assertFalse(snmpclient_mock.called)
                 self.assertEqual(states.POWER_ON, task.node['power_state'])
                 self.assertIsNone(task.node['target_power_state'])
                 self.assertIsNotNone(task.node['last_error'])
                 get_power_state_mock.reset_mock()
                 irmc_client.reset_mock()
-                dhcp_factory_mock.reset_mock()
-
-    @mock.patch.object(time, 'sleep', spec_set=True, autospec=True)
-    @mock.patch('ironic.drivers.modules.irmc.vendor.snmp.SNMPClient',
-                spec_set=True, autospec=True)
-    @mock.patch('ironic.drivers.modules.irmc.vendor.dhcp_factory.DHCPFactory',
-                spec_set=True, autospec=True)
-    @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
-                       autospec=True)
-    @mock.patch.object(irmc_power.IRMCPower, 'get_power_state', spec_set=True,
-                       autospec=True)
-    def test__vendor_power_action_os_snmp_timeout(self,
-                                                  get_power_state_mock,
-                                                  get_irmc_client_mock,
-                                                  dhcp_factory_mock,
-                                                  snmpclient_mock,
-                                                  sleep_mock):
-        with task_manager.acquire(self.context, self.node.uuid,
-                                  shared=False) as task:
-            task.node.driver_info = {"irmc_address": "1.2.3.4"}
-            for vendor in (irmc_vendor.IRMCPxeVendorPassthru(),
-                           irmc_vendor.IRMCIscsiVendorPassthru(),
-                           irmc_vendor.IRMCAgentVendorPassthru()):
-                get_power_state_mock.return_value = states.POWER_ON
-                irmc_client = get_irmc_client_mock.return_value
-                dhcp_factory_mock.return_value = mock.Mock(
-                    **{'provider.get_ip_addresses.return_value': ["5.6.7.8"]})
-                snmpclient_mock.side_effect = [
-                    mock.Mock(**{'get.return_value': 1}),
-                    mock.Mock(**{'get.return_value': 2})]
-                task.node['power_state'] = states.POWER_ON
-                task.node['last_error'] = None
-
-                self.assertRaises(exception.IRMCOperationError,
-                                  irmc_vendor._vendor_power_action,
-                                  task,
-                                  irmc_vendor.scci.POWER_SOFT_OFF)
-
-                get_power_state_mock.assert_called_once_with(
-                    task.driver.power, task)
-                irmc_client.assert_called_once_with(
-                    irmc_vendor.scci.POWER_SOFT_OFF)
-                (dhcp_factory_mock.return_value.provider
-                 .get_ip_addresses.assert_called_once_with)(task)
-                snmpclient_mock.assert_called_once_with(
-                    "5.6.7.8", 161, "v2c", "public", '')
-                self.assertEqual(states.POWER_ON, task.node['power_state'])
-                self.assertIsNone(task.node['target_power_state'])
-                self.assertIsNotNone(task.node['last_error'])
-                get_power_state_mock.reset_mock()
-                irmc_client.reset_mock()
-                dhcp_factory_mock.reset_mock()
                 snmpclient_mock.reset_mock()
 
     @mock.patch.object(time, 'sleep', spec_set=True, autospec=True)
     @mock.patch('ironic.drivers.modules.irmc.vendor.snmp.SNMPClient',
-                spec_set=True, autospec=True)
-    @mock.patch('ironic.drivers.modules.irmc.vendor.dhcp_factory.DHCPFactory',
                 spec_set=True, autospec=True)
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
@@ -386,7 +266,6 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
     def test__vendor_power_action_irmc_snmp_fail(self,
                                                  get_power_state_mock,
                                                  get_irmc_client_mock,
-                                                 dhcp_factory_mock,
                                                  snmpclient_mock,
                                                  sleep_mock):
         with task_manager.acquire(self.context, self.node.uuid,
@@ -397,13 +276,9 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                            irmc_vendor.IRMCAgentVendorPassthru()):
                 get_power_state_mock.return_value = states.POWER_ON
                 irmc_client = get_irmc_client_mock.return_value
-                dhcp_factory_mock.return_value = mock.Mock(
-                    **{'provider.get_ip_addresses.return_value': ["5.6.7.8"]})
-                snmpclient_mock.side_effect = [
-                    mock.Mock(**{'get.side_effect': exception.SNMPFailure(
-                        operation="GET", error="error")}),
-                    mock.Mock(**{'get.side_effect': exception.SNMPFailure(
-                        operation="GET", error="error")})]
+                snmpclient_mock.return_value = mock.Mock(
+                    **{'get.side_effect': exception.SNMPFailure(
+                        operation="GET", error="error")})
                 task.node['power_state'] = states.POWER_ON
                 task.node['last_error'] = None
 
@@ -416,23 +291,17 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
                     irmc_vendor.scci.POWER_SOFT_OFF)
-                (dhcp_factory_mock.return_value.provider
-                 .get_ip_addresses.assert_called_once_with)(task)
-                snmpclient_mock.assert_has_calls(
-                    [mock.call("5.6.7.8", 161, "v2c", "public", ''),
-                     mock.call("1.2.3.4", 161, "v2c", "public", '')])
-                self.assertEqual(states.POWER_ON, task.node['power_state'])
+                snmpclient_mock.assert_called_once_with(
+                    "1.2.3.4", 161, "v2c", "public", '')
+                self.assertEqual(states.ERROR, task.node['power_state'])
                 self.assertIsNone(task.node['target_power_state'])
                 self.assertIsNotNone(task.node['last_error'])
                 get_power_state_mock.reset_mock()
                 irmc_client.reset_mock()
-                dhcp_factory_mock.reset_mock()
                 snmpclient_mock.reset_mock()
 
     @mock.patch.object(time, 'sleep', spec_set=True, autospec=True)
     @mock.patch('ironic.drivers.modules.irmc.vendor.snmp.SNMPClient',
-                spec_set=True, autospec=True)
-    @mock.patch('ironic.drivers.modules.irmc.vendor.dhcp_factory.DHCPFactory',
                 spec_set=True, autospec=True)
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
@@ -441,7 +310,6 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
     def test__vendor_power_action_irmc_snmp_timeout(self,
                                                     get_power_state_mock,
                                                     get_irmc_client_mock,
-                                                    dhcp_factory_mock,
                                                     snmpclient_mock,
                                                     sleep_mock):
         with task_manager.acquire(self.context, self.node.uuid,
@@ -452,12 +320,8 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                            irmc_vendor.IRMCAgentVendorPassthru()):
                 get_power_state_mock.return_value = states.POWER_ON
                 irmc_client = get_irmc_client_mock.return_value
-                dhcp_factory_mock.return_value = mock.Mock(
-                    **{'provider.get_ip_addresses.return_value': ["5.6.7.8"]})
-                snmpclient_mock.side_effect = [
-                    mock.Mock(**{'get.side_effect': exception.SNMPFailure(
-                        operation="GET", error="error")}),
-                    mock.Mock(**{'get.return_value': 8})]
+                snmpclient_mock.return_value = mock.Mock(
+                    **{'get.return_value': 8})
                 task.node['power_state'] = states.POWER_ON
                 task.node['last_error'] = None
 
@@ -470,17 +334,13 @@ class IRMCVendorPassthruPrivateMethodsTestCase(db_base.DbTestCase):
                     task.driver.power, task)
                 irmc_client.assert_called_once_with(
                     irmc_vendor.scci.POWER_SOFT_OFF)
-                (dhcp_factory_mock.return_value.provider
-                 .get_ip_addresses.assert_called_once_with)(task)
-                snmpclient_mock.assert_has_calls(
-                    [mock.call("5.6.7.8", 161, "v2c", "public", ''),
-                     mock.call("1.2.3.4", 161, "v2c", "public", '')])
-                self.assertEqual(states.POWER_ON, task.node['power_state'])
+                snmpclient_mock.assert_called_once_with(
+                    "1.2.3.4", 161, "v2c", "public", '')
+                self.assertEqual(states.ERROR, task.node['power_state'])
                 self.assertIsNone(task.node['target_power_state'])
                 self.assertIsNotNone(task.node['last_error'])
                 get_power_state_mock.reset_mock()
                 irmc_client.reset_mock()
-                dhcp_factory_mock.reset_mock()
                 snmpclient_mock.reset_mock()
 
 
