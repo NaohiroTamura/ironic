@@ -31,6 +31,7 @@ import six
 from ironic.common import exception
 from ironic.common.i18n import _, _LE, _LW
 from ironic.common import raid
+from ironic.common import states
 from ironic.drivers.modules.network import common as net_common
 
 LOG = logging.getLogger(__name__)
@@ -511,6 +512,15 @@ class PowerInterface(BaseInterface):
         :param task: a TaskManager instance containing the node to act on.
         :raises: MissingParameterValue if a required parameter is missing.
         """
+
+    def get_supported_power_states(self, task):
+        """Get a list of the supported power states.
+
+        :param task: a TaskManager instance containing the node to act on.
+        :returns: A list with the supported power states defined
+                  in :mod:`ironic.common.states`.
+        """
+        return [states.POWER_ON, states.POWER_OFF, states.REBOOT]
 
 
 class ConsoleInterface(BaseInterface):
