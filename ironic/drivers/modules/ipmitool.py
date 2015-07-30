@@ -436,7 +436,7 @@ def _sleep_time(iter):
     return iter ** 2
 
 
-def _set_and_wait(target_state, driver_info):
+def _set_and_wait(edge_state, driver_info):
     """Helper function for DynamicLoopingCall.
 
     This method changes the power state and polls the BMCuntil the desired
@@ -448,21 +448,29 @@ def _set_and_wait(target_state, driver_info):
     if a driver is concerned, the state should be checked prior to calling this
     method.
 
-    :param target_state: desired power state
+    :param edge_state: transitional power state
     :param driver_info: the ipmitool parameters for accessing a node.
     :returns: one of ironic.common.states
 
     """
-    if target_state == states.POWER_ON:
-        state_name = "on"
-    elif target_state == states.POWER_OFF:
-        state_name = "off"
+    if edge_state == states.POWER_ON:
+        cmd_name = "on"
+        vertex_state = states.POWER_ON
+    elif edge_state == states.POWER_OFF:
+        cmd_name = "off"
+        vertex_state = states.POWER_OFF
+    elif edge_state == states.POWER_OFF_SOFT:
+        cmd_name = "soft"
+        vertex_state = states.POWER_OFF
+    elif edge_state == states.INJECT_NMI:
+        cmd_name = "diag"
+        vertex_state = states.POWER_ON
 
     def _wait(mutable):
         try:
             # Only issue power change command once
             if mutable['iter'] < 0:
-                _exec_ipmitool(driver_info, "power %s" % state_name)
+                _exec_ipmitool(driver_info, "power %s" % cmd_name)
             else:
                 mutable['power'] = _power_status(driver_info)
         except (exception.PasswordFileFailedToCreate,
@@ -470,11 +478,11 @@ def _set_and_wait(target_state, driver_info):
                 exception.IPMIFailure):
             # Log failures but keep trying
             LOG.warning(_LW("IPMI power %(state)s failed for node %(node)s."),
-                        {'state': state_name, 'node': driver_info['uuid']})
+                        {'state': cmd_name, 'node': driver_info['uuid']})
         finally:
             mutable['iter'] += 1
 
-        if mutable['power'] == target_state:
+        if mutable['power'] == vertex_state:
             raise loopingcall.LoopingCallDone()
 
         sleep_time = _sleep_time(mutable['iter'])
@@ -482,7 +490,7 @@ def _set_and_wait(target_state, driver_info):
             # Stop if the next loop would exceed maximum retry_timeout
             LOG.error(_LE('IPMI power %(state)s timed out after '
                           '%(tries)s retries on node %(node_id)s.'),
-                      {'state': state_name, 'tries': mutable['iter'],
+                      {'state': cmd_name, 'tries': mutable['iter'],
                        'node_id': driver_info['uuid']})
             mutable['power'] = states.ERROR
             raise loopingcall.LoopingCallDone()
@@ -519,6 +527,28 @@ def _power_off(driver_info):
 
     """
     return _set_and_wait(states.POWER_OFF, driver_info)
+
+
+def _power_off_soft(driver_info):
+    """Turn the power OFF SOFT for this node.
+
+    :param driver_info: the ipmitool parameters for accessing a node.
+    :returns: one of ironic.common.states POWER_OFF or ERROR.
+    :raises: IPMIFailure on an error from ipmitool (from _power_status call).
+
+    """
+    return _set_and_wait(states.POWER_OFF_SOFT, driver_info)
+
+
+def _inject_nmi(driver_info):
+    """Inject NMI to the OS on this node.
+
+    :param driver_info: the ipmitool parameters for accessing a node.
+    :returns: one of ironic.common.states POWER_ON or ERROR.
+    :raises: IPMIFailure on an error from ipmitool (from _power_status call).
+
+    """
+    return _set_and_wait(states.INJECT_NMI, driver_info)
 
 
 def _power_status(driver_info):
@@ -717,12 +747,13 @@ class IPMIPower(base.PowerInterface):
         return _power_status(driver_info)
 
     @task_manager.require_exclusive_lock
-    def set_power_state(self, task, pstate):
+    def set_power_state(self, task, edge_pstate):
         """Turn the power on or off.
 
         :param task: a TaskManager instance containing the node to act on.
-        :param pstate: The desired power state, one of ironic.common.states
-            POWER_ON, POWER_OFF.
+        :param edge_pstate: The transitional power state,
+            one of ironic.common.states POWER_ON, POWER_OFF, POWER_OFF_SOFT or
+            INJECT_NMI.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: MissingParameterValue if required ipmi parameters are missing
         :raises: PowerStateFailure if the power couldn't be set to pstate.
@@ -730,17 +761,25 @@ class IPMIPower(base.PowerInterface):
         """
         driver_info = _parse_driver_info(task.node)
 
-        if pstate == states.POWER_ON:
+        if edge_pstate == states.POWER_ON:
             state = _power_on(driver_info)
-        elif pstate == states.POWER_OFF:
+            vertex_pstate = states.POWER_ON
+        elif edge_pstate == states.POWER_OFF:
             state = _power_off(driver_info)
+            vertex_pstate = states.POWER_OFF
+        elif edge_pstate == states.POWER_OFF_SOFT:
+            state = _power_off_soft(driver_info)
+            vertex_pstate = states.POWER_OFF
+        elif edge_pstate == states.INJECT_NMI:
+            state = _inject_nmi(driver_info)
+            vertex_pstate = states.POWER_ON
         else:
             raise exception.InvalidParameterValue(
                 _("set_power_state called "
-                  "with invalid power state %s.") % pstate)
+                  "with invalid power state %s.") % edge_pstate)
 
-        if state != pstate:
-            raise exception.PowerStateFailure(pstate=pstate)
+        if state != vertex_pstate:
+            raise exception.PowerStateFailure(pstate=vertex_pstate)
 
     @task_manager.require_exclusive_lock
     def reboot(self, task):
@@ -759,6 +798,17 @@ class IPMIPower(base.PowerInterface):
 
         if state != states.POWER_ON:
             raise exception.PowerStateFailure(pstate=states.POWER_ON)
+
+    def get_supported_power_states(self, task):
+        """Get a list of the supported power states.
+
+        :param task: A TaskManager instance containing the node to act on.
+            currently not used.
+        :returns: A list with the supported power states defined
+                  in :mod:`ironic.common.states`.
+        """
+        return [states.POWER_ON, states.POWER_OFF, states.REBOOT,
+                states.POWER_OFF_SOFT, states.INJECT_NMI]
 
 
 class IPMIManagement(base.ManagementInterface):

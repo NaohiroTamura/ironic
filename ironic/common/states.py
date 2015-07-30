@@ -188,6 +188,12 @@ POWER_OFF = 'power off'
 REBOOT = 'rebooting'
 """ Node is rebooting. """
 
+POWER_OFF_SOFT = 'power off soft'
+""" Node is in the process of power off soft. """
+
+INJECT_NMI = 'inject nmi'
+""" Node is in the process of injecting NMI. """
+
 
 #####################
 # State machine model

@@ -17,6 +17,7 @@ from oslo_utils import excutils
 
 from ironic.common import exception
 from ironic.common.i18n import _
+from ironic.common.i18n import _LE
 from ironic.common.i18n import _LI
 from ironic.common.i18n import _LW
 from ironic.common import states
@@ -61,43 +62,70 @@ def node_power_action(task, new_state):
 
     """
     node = task.node
-    target_state = states.POWER_ON if new_state == states.REBOOT else new_state
 
-    if new_state != states.REBOOT:
-        try:
-            curr_state = task.driver.power.get_power_state(task)
-        except Exception as e:
-            with excutils.save_and_reraise_exception():
-                node['last_error'] = _(
-                    "Failed to change power state to '%(target)s'. "
-                    "Error: %(error)s") % {'target': new_state, 'error': e}
-                node['target_power_state'] = states.NOSTATE
-                node.save()
+    if new_state in (states.POWER_ON, states.POWER_OFF):
+        target_state = new_state
+    elif new_state in (states.REBOOT, states.INJECT_NMI):
+        target_state = states.POWER_ON
+    elif new_state == states.POWER_OFF_SOFT:
+        target_state = states.POWER_OFF
+    else:
+        target_state = None
 
-        if curr_state == new_state:
-            # Neither the ironic service nor the hardware has erred. The
-            # node is, for some reason, already in the requested state,
-            # though we don't know why. eg, perhaps the user previously
-            # requested the node POWER_ON, the network delayed those IPMI
-            # packets, and they are trying again -- but the node finally
-            # responds to the first request, and so the second request
-            # gets to this check and stops.
-            # This isn't an error, so we'll clear last_error field
-            # (from previous operation), log a warning, and return.
-            node['last_error'] = None
-            # NOTE(dtantsur): under rare conditions we can get out of sync here
-            node['power_state'] = new_state
+    def _not_going_to_change():
+        # Neither the ironic service nor the hardware has erred. The
+        # node is, for some reason, already in the requested state,
+        # though we don't know why. eg, perhaps the user previously
+        # requested the node POWER_ON, the network delayed those IPMI
+        # packets, and they are trying again -- but the node finally
+        # responds to the first request, and so the second request
+        # gets to this check and stops.
+        # This isn't an error, so we'll clear last_error field
+        # (from previous operation), log a warning, and return.
+        node['last_error'] = None
+        # NOTE(dtantsur): under rare conditions we can get out of sync here
+        node['power_state'] = curr_state
+        node['target_power_state'] = states.NOSTATE
+        node.save()
+        LOG.warn(_LW("Not going to change node power state because "
+                     "current state = requested state = '%(state)s'."),
+                 {'state': curr_state})
+
+    try:
+        curr_state = task.driver.power.get_power_state(task)
+    except Exception as e:
+        with excutils.save_and_reraise_exception():
+            node['last_error'] = _(
+                "Failed to change power state to '%(target)s'. "
+                "Error: %(error)s") % {'target': new_state, 'error': e}
             node['target_power_state'] = states.NOSTATE
             node.save()
-            LOG.warn(_LW("Not going to change node power state because "
-                         "current state = requested state = '%(state)s'."),
-                     {'state': curr_state})
+
+    if curr_state == states.POWER_ON:
+        if new_state == states.POWER_ON:
+            _not_going_to_change()
             return
 
-        if curr_state == states.ERROR:
-            # be optimistic and continue action
-            LOG.warn(_LW("Driver returns ERROR power state for node %s."),
-                     node.uuid)
+    elif curr_state == states.POWER_OFF:
+        if new_state in (states.POWER_OFF, states.POWER_OFF_SOFT):
+            _not_going_to_change()
+            return
+
+        elif new_state == states.INJECT_NMI:
+            node['last_error'] = _("Failed to inject NMI because "
+                                   "power state has to be 'POWER ON'")
+            node['power_state'] = curr_state
+            node['target_power_state'] = states.NOSTATE
+            node.save()
+            LOG.error(_LE("Failed to inject NMI because "
+                          "current power state is '%(state)s'."),
+                      {'state': curr_state})
+            return
+    else:
+        # if curr_state == states.ERROR:
+        #     be optimistic and continue action
+        LOG.warn(_LW("Driver returns ERROR power state for node %s."),
+                 node.uuid)
 
     # Set the target_power_state and clear any last_error, if we're
     # starting a new operation. This will expose to other processes
