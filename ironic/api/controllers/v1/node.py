@@ -346,7 +346,13 @@ class NodeStatesController(rest.RestController):
 
         if target not in [ir_states.POWER_ON,
                           ir_states.POWER_OFF,
-                          ir_states.REBOOT]:
+                          ir_states.REBOOT,
+                          ir_states.REBOOT_SOFT,
+                          ir_states.POWER_OFF_SOFT,
+                          ir_states.INJECT_NMI,
+                          ir_states.CANCEL_REBOOT_SOFT,
+                          ir_states.CANCEL_POWER_OFF_SOFT,
+                          ir_states.CANCEL_INJECT_NMI]:
             raise exception.InvalidStateRequested(
                 action=target, node=node_ident,
                 state=rpc_node.power_state)

@@ -426,6 +426,24 @@ class ConductorManager(periodic_task.PeriodicTasks):
                   "The desired new state is %(state)s."
                   % {'node': node_id, 'state': new_state})
 
+        # send a cancel message to cancelable task
+        if new_state in(states.CANCEL_REBOOT_SOFT,
+                        states.CANCEL_POWER_OFF_SOFT,
+                        states.CANCEL_INJECT_NMI):
+            with task_manager.acquire(
+                    context, node_id, shared=True,
+                    purpose='cancel power operation') as task:
+                node_uuid = task.node.uuid
+                if task.node.target_power_state in (states.POWER_OFF_SOFT,
+                                                    states.INJECT_NMI):
+                    utils.chan(node_uuid).put('cancel', block=False)
+                    LOG.debug("Cancel message has been sent to node %(node)s."
+                              % {'node': node_uuid})
+                else:
+                    LOG.debug("There is not task to be canceled at node "
+                              "%(node)s." % {'node': node_uuid})
+            return
+
         with task_manager.acquire(context, node_id, shared=False,
                                   purpose='changing node power state') as task:
             task.driver.power.validate(task)

@@ -314,10 +314,18 @@ class IPMIToolPrivateMethodTestCase(db_base.DbTestCase):
 
     def setUp(self):
         super(IPMIToolPrivateMethodTestCase, self).setUp()
+        """
         self.node = obj_utils.get_test_node(
             self.context,
             driver='fake_ipmitool',
             driver_info=INFO_DICT)
+        """
+        mgr_utils.mock_the_extension_manager(driver="fake_ipmitool")
+        self.driver = driver_factory.get_driver("fake_ipmitool")
+
+        self.node = obj_utils.create_test_node(self.context,
+                                               driver='fake_ipmitool',
+                                               driver_info=INFO_DICT)
         self.info = ipmi._parse_driver_info(self.node)
 
     def _test__make_password_file(self, mock_sleep, input_password,
@@ -1108,7 +1116,9 @@ class IPMIToolPrivateMethodTestCase(db_base.DbTestCase):
                     mock.call(self.info, "power status"),
                     mock.call(self.info, "power status")]
 
-        state = ipmi._power_on(self.info)
+        with task_manager.acquire(self.context,
+                                  self.node.uuid) as task:
+            state = ipmi._power_on(task.node)
 
         self.assertEqual(mock_exec.call_args_list, expected)
         self.assertEqual(states.ERROR, state)
@@ -1189,7 +1199,7 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
             self.driver.power.set_power_state(task,
                                               states.POWER_ON)
 
-        mock_on.assert_called_once_with(self.info)
+            mock_on.assert_called_once_with(task.node)
         self.assertFalse(mock_off.called)
 
     @mock.patch.object(ipmi, '_power_on', autospec=True)
@@ -1204,7 +1214,7 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
             self.driver.power.set_power_state(task,
                                               states.POWER_OFF)
 
-        mock_off.assert_called_once_with(self.info)
+            mock_off.assert_called_once_with(task.node)
         self.assertFalse(mock_on.called)
 
     @mock.patch.object(ipmi, '_power_on', autospec=True)
@@ -1220,7 +1230,7 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
                               task,
                               states.POWER_ON)
 
-        mock_on.assert_called_once_with(self.info)
+            mock_on.assert_called_once_with(task.node)
         self.assertFalse(mock_off.called)
 
     def test_set_power_invalid_state(self):

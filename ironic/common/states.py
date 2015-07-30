@@ -188,6 +188,24 @@ POWER_OFF = 'power off'
 REBOOT = 'rebooting'
 """ Node is rebooting. """
 
+REBOOT_SOFT = 'rebooting soft'
+""" Node is rebooting gracefully. """
+
+POWER_OFF_SOFT = 'power off soft'
+""" Node is in the process of power off soft. """
+
+INJECT_NMI = 'inject nmi'
+""" Node is in the process of injecting NMI. """
+
+CANCEL_REBOOT_SOFT = 'cancel rebooting soft'
+""" Node is canceling soft reboot task. """
+
+CANCEL_POWER_OFF_SOFT = 'cancel power off soft'
+""" Node is canceling soft power off task. """
+
+CANCEL_INJECT_NMI = 'cancel inject nmi'
+""" Node is canceling inject nmi task. """
+
 
 #####################
 # State machine model
