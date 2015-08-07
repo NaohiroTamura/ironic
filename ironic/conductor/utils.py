@@ -45,6 +45,10 @@ def node_set_boot_device(task, device, persistent=False):
                                                persistent=persistent)
 
 
+# POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
+# ***this note will be removed when POC has been done.***
+# here is exclusive_lock which just makes sure 'shared=False' is specified
+# in task_manager.acquire()
 @task_manager.require_exclusive_lock
 def node_power_action(task, new_state):
     """Change power state or reset for a node.
@@ -52,9 +56,7 @@ def node_power_action(task, new_state):
     Perform the requested power action if the transition is required.
 
     :param task: a TaskManager instance containing the node to act on.
-    :param new_state: Any power state from ironic.common.states. If the
-        state is 'REBOOT' then a reboot will be attempted, otherwise
-        the node power state is directly set to 'state'.
+    :param new_state: Any power state from ironic.common.states.
     :raises: InvalidParameterValue when the wrong state is specified
              or the wrong driver info is specified.
     :raises: other exceptions by the node's power driver if something
@@ -63,11 +65,9 @@ def node_power_action(task, new_state):
     """
     node = task.node
 
-    if new_state in (states.POWER_ON, states.POWER_OFF):
-        target_state = new_state
-    elif new_state in (states.REBOOT, states.INJECT_NMI):
+    if new_state in (states.POWER_ON, states.REBOOT, states.INJECT_NMI):
         target_state = states.POWER_ON
-    elif new_state == states.POWER_OFF_SOFT:
+    elif new_state in (states.POWER_OFF, states.POWER_OFF_SOFT):
         target_state = states.POWER_OFF
     else:
         target_state = None
@@ -144,14 +144,19 @@ def node_power_action(task, new_state):
     except Exception as e:
         with excutils.save_and_reraise_exception():
             node['last_error'] = _(
-                "Failed to change power state to '%(target)s'. "
-                "Error: %(error)s") % {'target': target_state, 'error': e}
+                "Failed to change power state to '%(target_state)s' "
+                "by '%(new_state)s'. Error: %(error)s") % {
+                    'target_state': target_state,
+                    'new_state': new_state,
+                    'error': e}
     else:
         # success!
         node['power_state'] = target_state
         LOG.info(_LI('Successfully set node %(node)s power state to '
-                     '%(state)s.'),
-                 {'node': node.uuid, 'state': target_state})
+                     '%(target_state)s by %(new_state)s.'),
+                 {'node': node.uuid,
+                  'target_state': target_state,
+                  'new_state': new_state})
     finally:
         node['target_power_state'] = states.NOSTATE
         node.save()

@@ -436,7 +436,7 @@ def _sleep_time(iter):
     return iter ** 2
 
 
-def _set_and_wait(edge_state, driver_info):
+def _set_and_wait(new_state, driver_info):
     """Helper function for DynamicLoopingCall.
 
     This method changes the power state and polls the BMCuntil the desired
@@ -448,23 +448,31 @@ def _set_and_wait(edge_state, driver_info):
     if a driver is concerned, the state should be checked prior to calling this
     method.
 
-    :param edge_state: transitional power state
+    :param new_state: desired power state
     :param driver_info: the ipmitool parameters for accessing a node.
     :returns: one of ironic.common.states
 
     """
-    if edge_state == states.POWER_ON:
+    if new_state == states.POWER_ON:
         cmd_name = "on"
-        vertex_state = states.POWER_ON
-    elif edge_state == states.POWER_OFF:
+        target_state = states.POWER_ON
+        retry_timeout = CONF.ipmi.retry_timeout  # 60
+    elif new_state == states.POWER_OFF:
         cmd_name = "off"
-        vertex_state = states.POWER_OFF
-    elif edge_state == states.POWER_OFF_SOFT:
+        target_state = states.POWER_OFF
+        retry_timeout = CONF.ipmi.retry_timeout  # 60
+    elif new_state == states.POWER_OFF_SOFT:
         cmd_name = "soft"
-        vertex_state = states.POWER_OFF
-    elif edge_state == states.INJECT_NMI:
+        target_state = states.POWER_OFF
+        retry_timeout = 600  # this magic number is just for testing
+    elif new_state == states.INJECT_NMI:
         cmd_name = "diag"
-        vertex_state = states.POWER_ON
+        # POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
+        # ***this note will be removed when POC has been done.***
+        # How do we verifty if OS has been rebooted?
+        # Setting states.POWER_ON into target_state is meaningless.
+        target_state = states.POWER_ON
+        retry_timeout = 600  # this magic number is just for testing
 
     def _wait(mutable):
         try:
@@ -482,11 +490,12 @@ def _set_and_wait(edge_state, driver_info):
         finally:
             mutable['iter'] += 1
 
-        if mutable['power'] == vertex_state:
+        if mutable['power'] == target_state:
             raise loopingcall.LoopingCallDone()
 
         sleep_time = _sleep_time(mutable['iter'])
-        if (sleep_time + mutable['total_time']) > CONF.ipmi.retry_timeout:
+        # if (sleep_time + mutable['total_time']) > CONF.ipmi.retry_timeout:
+        if (sleep_time + mutable['total_time']) > retry_timeout:
             # Stop if the next loop would exceed maximum retry_timeout
             LOG.error(_LE('IPMI power %(state)s timed out after '
                           '%(tries)s retries on node %(node_id)s.'),
@@ -747,11 +756,11 @@ class IPMIPower(base.PowerInterface):
         return _power_status(driver_info)
 
     @task_manager.require_exclusive_lock
-    def set_power_state(self, task, edge_pstate):
+    def set_power_state(self, task, new_state):
         """Turn the power on or off.
 
         :param task: a TaskManager instance containing the node to act on.
-        :param edge_pstate: The transitional power state,
+        :param new_state: desired power state.
             one of ironic.common.states POWER_ON, POWER_OFF, POWER_OFF_SOFT or
             INJECT_NMI.
         :raises: InvalidParameterValue if an invalid power state was specified.
@@ -761,25 +770,32 @@ class IPMIPower(base.PowerInterface):
         """
         driver_info = _parse_driver_info(task.node)
 
-        if edge_pstate == states.POWER_ON:
+        if new_state == states.POWER_ON:
+            target_state = states.POWER_ON
             state = _power_on(driver_info)
-            vertex_pstate = states.POWER_ON
-        elif edge_pstate == states.POWER_OFF:
+        elif new_state == states.POWER_OFF:
+            target_state = states.POWER_OFF
             state = _power_off(driver_info)
-            vertex_pstate = states.POWER_OFF
-        elif edge_pstate == states.POWER_OFF_SOFT:
+        elif new_state == states.POWER_OFF_SOFT:
+            target_state = states.POWER_OFF
             state = _power_off_soft(driver_info)
-            vertex_pstate = states.POWER_OFF
-        elif edge_pstate == states.INJECT_NMI:
+        elif new_state == states.INJECT_NMI:
+            # POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
+            # ***this note will be removed when POC has been done.***
+            # Setting states.POWER_ON into target_state is meaningless,
+            # however we cannot use the same strategey as REBOOT.
+            # The root cause is that general BMC doesn't know the status
+            # of OS. Vendor specific BMC such as iRMC can get the status
+            # of OS.
+            target_state = states.POWER_ON
             state = _inject_nmi(driver_info)
-            vertex_pstate = states.POWER_ON
         else:
             raise exception.InvalidParameterValue(
                 _("set_power_state called "
-                  "with invalid power state %s.") % edge_pstate)
+                  "with invalid power state %s.") % new_state)
 
-        if state != vertex_pstate:
-            raise exception.PowerStateFailure(pstate=vertex_pstate)
+        if state != target_state:
+            raise exception.PowerStateFailure(pstate=target_state)
 
     @task_manager.require_exclusive_lock
     def reboot(self, task):
@@ -793,6 +809,11 @@ class IPMIPower(base.PowerInterface):
 
         """
         driver_info = _parse_driver_info(task.node)
+        # POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
+        # ***this note will be removed when POC has been done.***
+        # This implementation is not actually REBOOT, but POWER CYCLE.
+        # Because it involves POWER OFF and then POWER ON.
+        # In case of INJECT NMI, we cannot use this strategy.
         _power_off(driver_info)
         state = _power_on(driver_info)
 

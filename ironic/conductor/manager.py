@@ -426,6 +426,9 @@ class ConductorManager(periodic_task.PeriodicTasks):
                   "The desired new state is %(state)s."
                   % {'node': node_id, 'state': new_state})
 
+        # POC NOTE for Soft POWER OFF and INJECT NMI(naohirot):
+        # ***this note will be removed when POC has been done.***
+        # here is shared=False, re-entrant causes NodeLocked HTTP 409
         with task_manager.acquire(context, node_id, shared=False,
                                   purpose='changing node power state') as task:
             task.driver.power.validate(task)
