@@ -188,6 +188,9 @@ POWER_OFF = 'power off'
 REBOOT = 'rebooting'
 """ Node is rebooting. """
 
+REBOOT_SOFT = 'rebooting soft'
+""" Node is rebooting gracefully. """
+
 POWER_OFF_SOFT = 'power off soft'
 """ Node is in the process of power off soft. """
 

@@ -65,7 +65,8 @@ def node_power_action(task, new_state):
     """
     node = task.node
 
-    if new_state in (states.POWER_ON, states.REBOOT, states.INJECT_NMI):
+    if new_state in (states.POWER_ON, states.REBOOT,
+                     states.REBOOT_SOFT, states.INJECT_NMI):
         target_state = states.POWER_ON
     elif new_state in (states.POWER_OFF, states.POWER_OFF_SOFT):
         target_state = states.POWER_OFF

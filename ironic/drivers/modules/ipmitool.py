@@ -789,6 +789,10 @@ class IPMIPower(base.PowerInterface):
             # of OS.
             target_state = states.POWER_ON
             state = _inject_nmi(driver_info)
+        elif new_state == states.REBOOT_SOFT:
+            _power_off_soft(driver_info)
+            target_state = states.POWER_ON
+            state = _power_on(driver_info)
         else:
             raise exception.InvalidParameterValue(
                 _("set_power_state called "
