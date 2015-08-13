@@ -428,6 +428,23 @@ class ConductorManager(periodic_task.PeriodicTasks):
 
         # POC NOTE for Soft POWER OFF and INJECT NMI(naohirot):
         # ***this note will be removed when POC has been done.***
+        # send a cancel message to soft power off task
+        if new_state == states.CANCEL_POWER_OFF_SOFT:
+            with task_manager.acquire(
+                    context, node_id, shared=True,
+                    purpose='cancel soft power off') as task:
+                node_uuid = task.node.uuid
+                if task.node.target_power_state == states.POWER_OFF_SOFT:
+                    utils.chan(node_uuid).put((1, 'cancel'), block=False)
+                    LOG.debug("Cancel message has been sent to node %(node)s."
+                              % {'node': node_uuid})
+                else:
+                    LOG.debug("There is not task to be canceled at node "
+                              "%(node)s." % {'node': node_uuid})
+            return
+
+        # POC NOTE for Soft POWER OFF and INJECT NMI(naohirot):
+        # ***this note will be removed when POC has been done.***
         # here is shared=False, re-entrant causes NodeLocked HTTP 409
         with task_manager.acquire(context, node_id, shared=False,
                                   purpose='changing node power state') as task:

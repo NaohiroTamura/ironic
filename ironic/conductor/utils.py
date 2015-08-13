@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from eventlet import queue
+
 from oslo_log import log
 from oslo_utils import excutils
 
@@ -43,6 +45,19 @@ def node_set_boot_device(task, device, persistent=False):
         task.driver.management.set_boot_device(task,
                                                device=device,
                                                persistent=persistent)
+
+
+# POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
+# ***this note will be removed when POC has been done.***
+# CSP channels
+_CHANNEL_REGISTRY = {}
+
+
+def chan(node_id):
+    if not _CHANNEL_REGISTRY.get(node_id):
+        _CHANNEL_REGISTRY[node_id] = queue.PriorityQueue()
+
+    return _CHANNEL_REGISTRY[node_id]
 
 
 # POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
@@ -131,8 +146,8 @@ def node_power_action(task, new_state):
     # Set the target_power_state and clear any last_error, if we're
     # starting a new operation. This will expose to other processes
     # and clients that work is in progress.
-    if node['target_power_state'] != target_state:
-        node['target_power_state'] = target_state
+    if node['target_power_state'] != new_state:
+        node['target_power_state'] = new_state
         node['last_error'] = None
         node.save()
 
