@@ -47,23 +47,22 @@ def node_set_boot_device(task, device, persistent=False):
                                                persistent=persistent)
 
 
-# POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
-# ***this note will be removed when POC has been done.***
-# CSP channels
 _CHANNEL_REGISTRY = {}
+"""CSP channel registry."""
 
 
-def chan(node_id):
-    if not _CHANNEL_REGISTRY.get(node_id):
-        _CHANNEL_REGISTRY[node_id] = queue.PriorityQueue()
+def chan(node_uuid):
+    """Get CSP channel for a node.
 
-    return _CHANNEL_REGISTRY[node_id]
+    :param node_uuid: node uuid
+    :return: channel of the node
+    """
+    if not _CHANNEL_REGISTRY.get(node_uuid):
+        _CHANNEL_REGISTRY[node_uuid] = queue.LightQueue(maxsize=1)
+
+    return _CHANNEL_REGISTRY[node_uuid]
 
 
-# POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
-# ***this note will be removed when POC has been done.***
-# here is exclusive_lock which just makes sure 'shared=False' is specified
-# in task_manager.acquire()
 @task_manager.require_exclusive_lock
 def node_power_action(task, new_state):
     """Change power state or reset for a node.

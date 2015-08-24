@@ -65,6 +65,15 @@ CONF.import_opt('min_command_interval',
                 'ironic.drivers.modules.ipminative',
                 group='ipmi')
 
+opts = [
+    cfg.IntOpt('retry_timeout_soft',
+               default=600,
+               help=_('Maximum time in seconds to retry IPMI power soft '
+                      'operations.')),
+]
+
+CONF.register_opts(opts, group='ipmi')
+
 LOG = logging.getLogger(__name__)
 
 VALID_PRIV_LEVELS = ['ADMINISTRATOR', 'CALLBACK', 'OPERATOR', 'USER']
@@ -460,23 +469,15 @@ def _set_and_wait(new_state, node):
     if new_state == states.POWER_ON:
         cmd_name = "on"
         target_state = states.POWER_ON
-        retry_timeout = CONF.ipmi.retry_timeout  # 60
+        retry_timeout = CONF.ipmi.retry_timeout
     elif new_state == states.POWER_OFF:
         cmd_name = "off"
         target_state = states.POWER_OFF
-        retry_timeout = CONF.ipmi.retry_timeout  # 60
+        retry_timeout = CONF.ipmi.retry_timeout
     elif new_state == states.POWER_OFF_SOFT:
         cmd_name = "soft"
         target_state = states.POWER_OFF
-        retry_timeout = 600  # this magic number is just for testing
-    elif new_state == states.INJECT_NMI:
-        cmd_name = "diag"
-        # POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
-        # ***this note will be removed when POC has been done.***
-        # How do we verifty if OS has been rebooted?
-        # Setting states.POWER_ON into target_state is meaningless.
-        target_state = states.POWER_ON
-        retry_timeout = 600  # this magic number is just for testing
+        retry_timeout = CONF.ipmi.retry_timeout_soft
 
     node_uuid = node.uuid
 
@@ -509,7 +510,6 @@ def _set_and_wait(new_state, node):
                       {'node': node_uuid})
 
         sleep_time = _sleep_time(mutable['iter'])
-        # if (sleep_time + mutable['total_time']) > CONF.ipmi.retry_timeout:
         if (sleep_time + mutable['total_time']) > retry_timeout:
             # Stop if the next loop would exceed maximum retry_timeout
             LOG.error(_LE('IPMI power %(state)s timed out after '
@@ -562,17 +562,6 @@ def _power_off_soft(node):
 
     """
     return _set_and_wait(states.POWER_OFF_SOFT, node)
-
-
-def _inject_nmi(node):
-    """Inject NMI to the OS on this node.
-
-    :param node: an Ironic node object.
-    :returns: one of ironic.common.states POWER_ON or ERROR.
-    :raises: IPMIFailure on an error from ipmitool (from _power_status call).
-
-    """
-    return _set_and_wait(states.INJECT_NMI, node)
 
 
 def _power_status(driver_info):
@@ -793,20 +782,13 @@ class IPMIPower(base.PowerInterface):
         elif new_state == states.POWER_OFF_SOFT:
             target_state = states.POWER_OFF
             state = _power_off_soft(task.node)
-        elif new_state == states.INJECT_NMI:
-            # POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
-            # ***this note will be removed when POC has been done.***
-            # Setting states.POWER_ON into target_state is meaningless,
-            # however we cannot use the same strategey as REBOOT.
-            # The root cause is that general BMC doesn't know the status
-            # of OS. Vendor specific BMC such as iRMC can get the status
-            # of OS.
-            target_state = states.POWER_ON
-            state = _inject_nmi(task.node)
         elif new_state == states.REBOOT_SOFT:
             _power_off_soft(task.node)
             target_state = states.POWER_ON
             state = _power_on(task.node)
+        elif new_state == states.INJECT_NMI:
+            raise exception.InvalidParameterValue(
+                _("set_power_state doesn't support %s.") % new_state)
         else:
             raise exception.InvalidParameterValue(
                 _("set_power_state called "
@@ -827,11 +809,7 @@ class IPMIPower(base.PowerInterface):
 
         """
         driver_info = _parse_driver_info(task.node)
-        # POC NOTE for POWER OFF Soft and INJECT NMI(naohirot):
-        # ***this note will be removed when POC has been done.***
-        # This implementation is not actually REBOOT, but POWER CYCLE.
-        # Because it involves POWER OFF and then POWER ON.
-        # In case of INJECT NMI, we cannot use this strategy.
+
         _power_off(driver_info)
         state = _power_on(driver_info)
 
@@ -847,7 +825,8 @@ class IPMIPower(base.PowerInterface):
                   in :mod:`ironic.common.states`.
         """
         return [states.POWER_ON, states.POWER_OFF, states.REBOOT,
-                states.POWER_OFF_SOFT, states.INJECT_NMI]
+                states.REBOOT_SOFT, states.POWER_OFF_SOFT,
+                states.CANCEL_REBOOT_SOFT, states.CANCEL_POWER_OFF_SOFT]
 
 
 class IPMIManagement(base.ManagementInterface):

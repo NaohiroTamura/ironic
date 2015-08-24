@@ -1,77 +1,31 @@
 [DEFAULT]
 
 #
-# Options defined in oslo.messaging
+# Options defined in oslo.service.service
 #
 
-# Size of RPC connection pool. (integer value)
-#rpc_conn_pool_size=30
+# Enable eventlet backdoor.  Acceptable values are 0, <port>,
+# and <start>:<end>, where 0 results in listening on a random
+# tcp port number; <port> results in listening on the
+# specified port number (and not enabling backdoor if that
+# port is in use); and <start>:<end> results in listening on
+# the smallest unused port number within the specified range
+# of port numbers.  The chosen port is displayed in the
+# service's log file. (string value)
+#backdoor_port=<None>
 
-# ZeroMQ bind address. Should be a wildcard (*), an ethernet
-# interface, or IP. The "host" option should point or resolve
-# to this address. (string value)
-#rpc_zmq_bind_address=*
+# Enables or disables logging values of all registered options
+# when starting a service (at DEBUG level). (boolean value)
+#log_options=true
 
-# MatchMaker driver. (string value)
-#rpc_zmq_matchmaker=local
 
-# ZeroMQ receiver listening port. (integer value)
-#rpc_zmq_port=9501
+#
+# Options defined in oslo.service.periodic_task
+#
 
-# Number of ZeroMQ contexts, defaults to 1. (integer value)
-#rpc_zmq_contexts=1
-
-# Maximum number of ingress messages to locally buffer per
-# topic. Default is unlimited. (integer value)
-#rpc_zmq_topic_backlog=<None>
-
-# Directory for holding IPC sockets. (string value)
-#rpc_zmq_ipc_dir=/var/run/openstack
-
-# Name of this node. Must be a valid hostname, FQDN, or IP
-# address. Must match "host" option, if running Nova. (string
-# value)
-#rpc_zmq_host=ironic
-
-# Seconds to wait before a cast expires (TTL). Only supported
-# by impl_zmq. (integer value)
-#rpc_cast_timeout=30
-
-# Heartbeat frequency. (integer value)
-#matchmaker_heartbeat_freq=300
-
-# Heartbeat time-to-live. (integer value)
-#matchmaker_heartbeat_ttl=600
-
-# Size of executor thread pool. (integer value)
-# Deprecated group/name - [DEFAULT]/rpc_thread_pool_size
-#executor_thread_pool_size=64
-
-# The Drivers(s) to handle sending notifications. Possible
-# values are messaging, messagingv2, routing, log, test, noop
-# (multi valued)
-#notification_driver=
-
-# AMQP topic used for OpenStack notifications. (list value)
-# Deprecated group/name - [rpc_notifier2]/topics
-#notification_topics=notifications
-
-# Seconds to wait for a response from a call. (integer value)
-#rpc_response_timeout=60
-
-# A URL representing the messaging driver to use and its full
-# configuration. If not set, we fall back to the rpc_backend
-# option and driver specific configuration. (string value)
-#transport_url=<None>
-
-# The messaging driver to use, defaults to rabbit. Other
-# drivers include qpid and zmq. (string value)
-#rpc_backend=rabbit
-
-# The default exchange under which topics are scoped. May be
-# overridden by an exchange name specified in the
-# transport_url option. (string value)
-#control_exchange=openstack
+# Some periodic tasks can be run in a separate process. Should
+# we run them here? (boolean value)
+#run_external_periodic_tasks=true
 
 
 #
@@ -79,12 +33,12 @@
 #
 
 # Print debugging output (set logging level to DEBUG instead
-# of default WARNING level). (boolean value)
+# of default INFO level). (boolean value)
 #debug=false
 
-# Print more verbose output (set logging level to INFO instead
-# of default WARNING level). (boolean value)
-#verbose=false
+# If set to false, will disable INFO logging level, making
+# WARNING the default. (boolean value)
+#verbose=true
 
 # The name of a logging configuration file. This file is
 # appended to any existing logging configuration files. For
@@ -168,31 +122,77 @@
 
 
 #
-# Options defined in oslo.service.service
+# Options defined in oslo.messaging
 #
 
-# Enable eventlet backdoor.  Acceptable values are 0, <port>,
-# and <start>:<end>, where 0 results in listening on a random
-# tcp port number; <port> results in listening on the
-# specified port number (and not enabling backdoor if that
-# port is in use); and <start>:<end> results in listening on
-# the smallest unused port number within the specified range
-# of port numbers.  The chosen port is displayed in the
-# service's log file. (string value)
-#backdoor_port=<None>
+# Size of RPC connection pool. (integer value)
+#rpc_conn_pool_size=30
 
-# Enables or disables logging values of all registered options
-# when starting a service (at DEBUG level). (boolean value)
-#log_options=true
+# ZeroMQ bind address. Should be a wildcard (*), an ethernet
+# interface, or IP. The "host" option should point or resolve
+# to this address. (string value)
+#rpc_zmq_bind_address=*
 
+# MatchMaker driver. (string value)
+#rpc_zmq_matchmaker=local
 
-#
-# Options defined in oslo.service.periodic_task
-#
+# ZeroMQ receiver listening port. (integer value)
+#rpc_zmq_port=9501
 
-# Some periodic tasks can be run in a separate process. Should
-# we run them here? (boolean value)
-#run_external_periodic_tasks=true
+# Number of ZeroMQ contexts, defaults to 1. (integer value)
+#rpc_zmq_contexts=1
+
+# Maximum number of ingress messages to locally buffer per
+# topic. Default is unlimited. (integer value)
+#rpc_zmq_topic_backlog=<None>
+
+# Directory for holding IPC sockets. (string value)
+#rpc_zmq_ipc_dir=/var/run/openstack
+
+# Name of this node. Must be a valid hostname, FQDN, or IP
+# address. Must match "host" option, if running Nova. (string
+# value)
+#rpc_zmq_host=ironic
+
+# Seconds to wait before a cast expires (TTL). Only supported
+# by impl_zmq. (integer value)
+#rpc_cast_timeout=30
+
+# Heartbeat frequency. (integer value)
+#matchmaker_heartbeat_freq=300
+
+# Heartbeat time-to-live. (integer value)
+#matchmaker_heartbeat_ttl=600
+
+# Size of executor thread pool. (integer value)
+# Deprecated group/name - [DEFAULT]/rpc_thread_pool_size
+#executor_thread_pool_size=64
+
+# The Drivers(s) to handle sending notifications. Possible
+# values are messaging, messagingv2, routing, log, test, noop
+# (multi valued)
+#notification_driver=
+
+# AMQP topic used for OpenStack notifications. (list value)
+# Deprecated group/name - [rpc_notifier2]/topics
+#notification_topics=notifications
+
+# Seconds to wait for a response from a call. (integer value)
+#rpc_response_timeout=60
+
+# A URL representing the messaging driver to use and its full
+# configuration. If not set, we fall back to the rpc_backend
+# option and driver specific configuration. (string value)
+#transport_url=<None>
+
+# The messaging driver to use, defaults to rabbit. Other
+# drivers include qpid and zmq. (string value)
+#rpc_backend=rabbit
+
+# The default exchange under which topics are scoped. May be
+# overridden by an exchange name specified in the
+# transport_url option. (string value)
+#control_exchange=openstack
 
 
 #
@@ -983,6 +983,15 @@
 # too low may cause the BMC to crash. Recommended setting is 5
 # seconds. (integer value)
 #min_command_interval=5
+
+
+#
+# Options defined in ironic.drivers.modules.ipmitool
+#
+
+# Maximum time in seconds to retry IPMI power soft operations.
+# (integer value)
+#retry_timeout_soft=600
 
 
 [irmc]
