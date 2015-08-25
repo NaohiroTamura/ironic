@@ -15,31 +15,148 @@
 """
 iRMC Power Driver using the Base Server Profile
 """
+import time
 
 from ironic_lib import metrics_utils
 from oslo_log import log as logging
 from oslo_utils import importutils
 
 from ironic.common import exception
-from ironic.common.i18n import _, _LE
+from ironic.common.i18n import _
+from ironic.common.i18n import _LE
+from ironic.common.i18n import _LI
 from ironic.common import states
 from ironic.conductor import task_manager
 from ironic.drivers import base
 from ironic.drivers.modules import ipmitool
 from ironic.drivers.modules.irmc import boot as irmc_boot
 from ironic.drivers.modules.irmc import common as irmc_common
-
+from ironic.drivers.modules import snmp
 
 scci = importutils.try_import('scciclient.irmc.scci')
 
 LOG = logging.getLogger(__name__)
 
+
 METRICS = metrics_utils.get_metrics_logger(__name__)
+
+# SC2.mib: sc2srvCurrentBootStatus
+BOOT_STATUS_OID = "1.3.6.1.4.1.231.2.10.2.2.10.4.1.1.4.1"
+BOOT_STATUS = [
+    None,
+    'unknown',              # unknown(1)
+    'off',                  # off(2)
+    'no-boot-cpu',          # no-boot-cpu(3)
+    'self-test',            # self-test(4)
+    'setup',                # setup(5)
+    'os-boot',              # os-boot(6)
+    'diagnostic-boot',      # diagnostic-boot(7)
+    'os-running',           # os-running(8)
+    'diagnostic-running',   # diagnostic-running(9)
+    'os-shutdown',          # os-shutdown(10)
+    'diagnostic-shutdown',  # diagnostic-shutdown(11)
+    'reset',                # reset(12)
+]
 
 if scci:
     STATES_MAP = {states.POWER_OFF: scci.POWER_OFF,
                   states.POWER_ON: scci.POWER_ON,
-                  states.REBOOT: scci.POWER_RESET}
+                  states.REBOOT: scci.POWER_RESET,
+                  states.REBOOT_SOFT: scci.POWER_SOFT_CYCLE,
+                  states.POWER_OFF_SOFT: scci.POWER_SOFT_OFF,
+                  states.INJECT_NMI: scci.POWER_RAISE_NMI}
+
+
+def _wait_power_state(task, target_state):
+    """Wait for having changed to the target power state.
+
+    :param task: a TaskManager instance containing the node to act on.
+    :raises: IRMCOperationError if attaching virtual media failed.
+    :raises: InvalidParameterValue if the validation of the
+        ManagementInterface fails.
+    """
+    node = task.node
+    d_info = irmc_common.parse_driver_info(node)
+    snmp_client = snmp.SNMPClient(d_info['irmc_address'],
+                                  d_info['irmc_snmp_port'],
+                                  d_info['irmc_snmp_version'],
+                                  d_info['irmc_snmp_community'],
+                                  d_info['irmc_snmp_security'])
+
+    interval = CONF.irmc.snmp_polling_interval
+    max_retry = int(CONF.irmc.retry_timeout_soft / interval)
+
+    try:
+        for i in range(0, max_retry):
+            bootstatus_value = snmp_client.get(BOOT_STATUS_OID)
+            LOG.debug("iRMC SNMP agent of %(node_id)s returned "
+                      "boot status value %(bootstatus)s at %(times)s."
+                      % {'node_id': node.uuid,
+                         'bootstatus': BOOT_STATUS[bootstatus_value],
+                         'times': i})
+            if ((target_state == states.POWER_SOFT_OFF and
+                 bootstatus_value in (1, 2)) or
+                (target_state in (states.REBOOT_SOFT, states.INJECT_NMI) and
+                 bootstatus_value == 8)):
+                break
+            time.sleep(interval)
+
+            try:
+                manager_utils.chan(node.uuid).get(block=False)
+                LOG.debug('Channel of node %(node)s got cancel messsage.',
+                          {'node': node.uuid})
+                raise exception.IRMCOperationError(
+                    operation=target_state, error="canceled")
+            except queue.Empty:
+                LOG.debug('Channel of node %(node)s is empty.',
+                          {'node': node.uuid})
+
+    except exception.SNMPFailure as snmp_exception:
+        node.last_error = _(
+            "iRMC failed to acknowledge the target state "
+            "for node %(node_id)s."
+            "Error: %(error)s") % {'node_id': node.uuid,
+                                   'error': snmp_exception}
+        node.power_state = states.ERROR
+        node.target_power_state = states.NOSTATE
+        node.save()
+
+        LOG.error(node.last_error)
+        raise exception.IRMCOperationError(
+            operation=target_state, error=snmp_exception)
+
+    if ((target_state == states.POWER_SOFT_OFF and
+         bootstatus_value not in (1, 2)) or
+        (target_state in (states.REBOOT_SOFT, states.INJECT_NMI) and
+         bootstatus_value != 8)):
+        # iRMC failed to acknowledge the target state
+        node.last_error = _(
+            "iRMC failed to acknowledge the target state "
+            "for node %(node_id)s."
+            "Error: iRMC reteruend unexpected boot status value "
+            "%(bootstatus)s.") % {
+                'node_id': node.uuid,
+                'bootstatus': BOOT_STATUS[bootstatus_value]}
+        node.power_state = states.ERROR
+        node.target_power_state = states.NOSTATE
+        node.save()
+
+        LOG.error(node.last_error)
+        error = _('unexpected boot status value')
+        raise exception.IRMCOperationError(
+            operation=target_state, error=error)
+
+    else:
+        # iRMC acknowledged the target state
+        node.last_error = None
+        node.power_state = target_state
+        node.target_power_state = states.NOSTATE
+        node.save()
+
+        LOG.info(_LI('iRMC successfully set node %(node_id)s '
+                     'power state to %(bootstatus)s.'),
+                 {'node_id': node.uuid,
+                  'bootstatus': BOOT_STATUS[bootstatus_value]})
 
 
 def _set_power_state(task, target_state):
@@ -75,6 +192,10 @@ def _set_power_state(task, target_state):
         operation = _('iRMC set_power_state')
         raise exception.IRMCOperationError(operation=operation,
                                            error=irmc_exception)
+
+    if target_state in (states.REBOOT_SOFT, states.POWER_OFF_SOFT,
+                        states.INJECT_NMI):
+        _wait_power_state(task, target_state)
 
 
 class IRMCPower(base.PowerInterface):
@@ -145,3 +266,17 @@ class IRMCPower(base.PowerInterface):
             _set_power_state(task, states.REBOOT)
         elif current_pstate == states.POWER_OFF:
             _set_power_state(task, states.POWER_ON)
+
+    def get_supported_power_states(self, task):
+        """Get a list of the supported power states.
+
+        :param task: A TaskManager instance containing the node to act on.
+            currently not used.
+        :returns: A list with the supported power states defined
+                  in :mod:`ironic.common.states`.
+        """
+        return [states.POWER_ON, states.POWER_OFF, states.REBOOT,
+                states.REBOOT_SOFT, states.POWER_OFF_SOFT,
+                states.INJECT_NMI,
+                states.CANCEL_REBOOT_SOFT, states.CANCEL_POWER_OFF_SOFT,
+                states.CANCEL_INJECT_NMI]
