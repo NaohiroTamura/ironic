@@ -66,22 +66,6 @@ def node_set_boot_device(task, device, persistent=False):
                                                    persistent=persistent)
 
 
-_CHANNEL_REGISTRY = {}
-"""CSP channel registry."""
-
-
-def chan(node_uuid):
-    """Get CSP channel for a node.
-
-    :param node_uuid: node uuid
-    :return: channel of the node
-    """
-    if not _CHANNEL_REGISTRY.get(node_uuid):
-        _CHANNEL_REGISTRY[node_uuid] = queue.LightQueue(maxsize=1)
-
-    return _CHANNEL_REGISTRY[node_uuid]
-
-
 @task_manager.require_exclusive_lock
 def node_power_action(task, new_state):
     """Change power state or reset for a node.
@@ -102,9 +86,9 @@ def node_power_action(task, new_state):
     node = task.node
 
     if new_state in (states.POWER_ON, states.REBOOT,
-                     states.REBOOT_SOFT, states.INJECT_NMI):
+                     states.SOFT_REBOOT, states.INJECT_NMI):
         target_state = states.POWER_ON
-    elif new_state in (states.POWER_OFF, states.POWER_OFF_SOFT):
+    elif new_state in (states.POWER_OFF, states.SOFT_POWER_OFF):
         target_state = states.POWER_OFF
     else:
         target_state = None
@@ -150,20 +134,10 @@ def node_power_action(task, new_state):
             return
 
     elif curr_state == states.POWER_OFF:
-        if new_state in (states.POWER_OFF, states.POWER_OFF_SOFT):
+        if new_state in (states.POWER_OFF, states.SOFT_POWER_OFF):
             _not_going_to_change()
             return
 
-        elif new_state == states.INJECT_NMI:
-            node['last_error'] = _("Failed to inject NMI because "
-                                   "power state has to be 'POWER ON'")
-            node['power_state'] = curr_state
-            node['target_power_state'] = states.NOSTATE
-            node.save()
-            LOG.error(_LE("Failed to inject NMI because "
-                          "current power state is '%(state)s'."),
-                      {'state': curr_state})
-            return
     else:
         # if curr_state == states.ERROR:
         #     be optimistic and continue action
