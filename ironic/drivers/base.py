@@ -516,7 +516,7 @@ class PowerInterface(BaseInterface):
     def get_supported_power_states(self, task):
         """Get a list of the supported power states.
 
-        :param task: a TaskManager instance containing the node to act on.
+        :param task: A TaskManager instance containing the node to act on.
         :returns: A list with the supported power states defined
                   in :mod:`ironic.common.states`.
         """

@@ -132,15 +132,13 @@ def node_power_action(task, new_state):
         if new_state == states.POWER_ON:
             _not_going_to_change()
             return
-
     elif curr_state == states.POWER_OFF:
         if new_state in (states.POWER_OFF, states.SOFT_POWER_OFF):
             _not_going_to_change()
             return
-
     else:
         # if curr_state == states.ERROR:
-        #     be optimistic and continue action
+        # be optimistic and continue action
         LOG.warning(_LW("Driver returns ERROR power state for node %s."),
                     node.uuid)
 
