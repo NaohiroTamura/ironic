@@ -341,18 +341,10 @@ class IPMIToolPrivateMethodTestCase(db_base.DbTestCase):
 
     def setUp(self):
         super(IPMIToolPrivateMethodTestCase, self).setUp()
-        """
         self.node = obj_utils.get_test_node(
             self.context,
             driver='fake_ipmitool',
             driver_info=INFO_DICT)
-        """
-        mgr_utils.mock_the_extension_manager(driver="fake_ipmitool")
-        self.driver = driver_factory.get_driver("fake_ipmitool")
-
-        self.node = obj_utils.create_test_node(self.context,
-                                               driver='fake_ipmitool',
-                                               driver_info=INFO_DICT)
         self.info = ipmi._parse_driver_info(self.node)
 
     def _test__make_password_file(self, mock_sleep, input_password,
@@ -1260,9 +1252,29 @@ class IPMIToolPrivateMethodTestCase(db_base.DbTestCase):
                     mock.call(self.info, "power status"),
                     mock.call(self.info, "power status")]
 
-        with task_manager.acquire(self.context,
-                                  self.node.uuid) as task:
-            state = ipmi._power_on(task.node)
+        state = ipmi._power_on(self.info)
+
+        self.assertEqual(mock_exec.call_args_list, expected)
+        self.assertEqual(states.ERROR, state)
+
+    @mock.patch.object(ipmi, '_exec_ipmitool', autospec=True)
+    @mock.patch('eventlet.greenthread.sleep', autospec=True)
+    def test__soft_power_off_max_retries(self, sleep_mock, mock_exec,
+                                         mock_sleep):
+        self.config(retry_timeout_soft=2, group='ipmi')
+
+        def side_effect(driver_info, command):
+            resp_dict = {"power status": ["Chassis Power is on\n", None],
+                         "power soft": [None, None]}
+            return resp_dict.get(command, ["Bad\n", None])
+
+        mock_exec.side_effect = side_effect
+
+        expected = [mock.call(self.info, "power soft"),
+                    mock.call(self.info, "power status"),
+                    mock.call(self.info, "power status")]
+
+        state = ipmi._soft_power_off(self.info)
 
         self.assertEqual(mock_exec.call_args_list, expected)
         self.assertEqual(states.ERROR, state)
@@ -1347,7 +1359,7 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
             self.driver.power.set_power_state(task,
                                               states.POWER_ON)
 
-            mock_on.assert_called_once_with(task.node)
+        mock_on.assert_called_once_with(self.info)
         self.assertFalse(mock_off.called)
 
     @mock.patch.object(driver_utils, 'ensure_next_boot_device', autospec=True)
@@ -1379,7 +1391,52 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
             self.driver.power.set_power_state(task,
                                               states.POWER_OFF)
 
-            mock_off.assert_called_once_with(task.node)
+        mock_off.assert_called_once_with(self.info)
+        self.assertFalse(mock_on.called)
+
+    @mock.patch.object(ipmi, '_power_on', autospec=True)
+    @mock.patch.object(ipmi, '_soft_power_off', autospec=True)
+    def test_set_soft_power_off_ok(self, mock_off, mock_on):
+        self.config(retry_timeout=0, group='ipmi')
+
+        mock_off.return_value = states.POWER_OFF
+
+        with task_manager.acquire(self.context,
+                                  self.node['uuid']) as task:
+            self.driver.power.set_power_state(task,
+                                              states.SOFT_POWER_OFF)
+
+        mock_off.assert_called_once_with(self.info)
+        self.assertFalse(mock_on.called)
+
+    @mock.patch.object(ipmi, '_power_on', autospec=True)
+    @mock.patch.object(ipmi, '_soft_power_off', autospec=True)
+    def test_set_soft_reboot_ok(self, mock_off, mock_on):
+        self.config(retry_timeout=0, group='ipmi')
+
+        mock_on.return_value = states.POWER_ON
+
+        with task_manager.acquire(self.context,
+                                  self.node['uuid']) as task:
+            self.driver.power.set_power_state(task,
+                                              states.SOFT_REBOOT)
+
+        mock_off.assert_called_once_with(self.info)
+        mock_on.assert_called_once_with(self.info)
+
+    @mock.patch.object(ipmi, '_power_on', autospec=True)
+    @mock.patch.object(ipmi, '_inject_nmi', autospec=True)
+    def test_set_inject_nmi_ok(self, mock_nmi, mock_on):
+        self.config(retry_timeout=0, group='ipmi')
+
+        mock_nmi.return_value = states.POWER_ON
+
+        with task_manager.acquire(self.context,
+                                  self.node['uuid']) as task:
+            self.driver.power.set_power_state(task,
+                                              states.INJECT_NMI)
+
+        mock_nmi.assert_called_once_with(self.info)
         self.assertFalse(mock_on.called)
 
     @mock.patch.object(ipmi, '_power_on', autospec=True)
@@ -1395,7 +1452,7 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
                               task,
                               states.POWER_ON)
 
-            mock_on.assert_called_once_with(task.node)
+        mock_on.assert_called_once_with(self.info)
         self.assertFalse(mock_off.called)
 
     def test_set_power_invalid_state(self):
