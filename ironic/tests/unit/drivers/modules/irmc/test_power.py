@@ -190,7 +190,9 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
                        autospec=True)
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
+    @mock.patch.object(irmc_boot, 'attach_boot_iso_if_needed')
     def test__set_power_state_soft_power_off_ok(self,
+                                                attach_boot_iso_if_needed_mock,
                                                 get_irmc_client_mock,
                                                 _wait_power_state_mock):
         irmc_client = get_irmc_client_mock.return_value
@@ -198,6 +200,7 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=True) as task:
             irmc_power._set_power_state(task, target_state)
+        self.assertFalse(attach_boot_iso_if_needed_mock.called)
         irmc_client.assert_called_once_with(irmc_power.scci.POWER_SOFT_OFF)
         _wait_power_state_mock.assert_called_once_with(task, target_state)
 
@@ -205,7 +208,9 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
                        autospec=True)
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
+    @mock.patch.object(irmc_boot, 'attach_boot_iso_if_needed')
     def test__set_power_state_inject_nmi_ok(self,
+                                            attach_boot_iso_if_needed_mock,
                                             get_irmc_client_mock,
                                             _wait_power_state_mock):
         irmc_client = get_irmc_client_mock.return_value
@@ -213,29 +218,33 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=True) as task:
             irmc_power._set_power_state(task, target_state)
+        self.assertFalse(attach_boot_iso_if_needed_mock.called)
         irmc_client.assert_called_once_with(irmc_power.scci.POWER_RAISE_NMI)
         _wait_power_state_mock.assert_called_once_with(task, target_state)
 
     @mock.patch.object(irmc_power, '_wait_power_state', spec_set=True,
                        autospec=True)
-    @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
-                       autospec=True)
-    def test__set_power_state_invalid_target_state(self,
-                                                   get_irmc_client_mock,
-                                                   _wait_power_state_mock):
+    @mock.patch.object(irmc_boot, 'attach_boot_iso_if_needed')
+    def test__set_power_state_invalid_target_state(
+            self,
+            attach_boot_iso_if_needed_mock,
+            _wait_power_state_mock):
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=True) as task:
             self.assertRaises(exception.InvalidParameterValue,
                               irmc_power._set_power_state,
                               task,
                               states.ERROR)
+            self.assertFalse(attach_boot_iso_if_needed_mock.called)
             self.assertFalse(_wait_power_state_mock.called)
 
     @mock.patch.object(irmc_power, '_wait_power_state', spec_set=True,
                        autospec=True)
     @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
                        autospec=True)
+    @mock.patch.object(irmc_boot, 'attach_boot_iso_if_needed')
     def test__set_power_state_scci_exception(self,
+                                             attach_boot_iso_if_needed_mock,
                                              get_irmc_client_mock,
                                              _wait_power_state_mock):
         irmc_client = get_irmc_client_mock.return_value
@@ -248,26 +257,30 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
                               irmc_power._set_power_state,
                               task,
                               states.POWER_ON)
+            attach_boot_iso_if_needed_mock.assert_called_once_with(
+                task)
             self.assertFalse(_wait_power_state_mock.called)
 
     @mock.patch.object(irmc_power, '_wait_power_state', spec_set=True,
                        autospec=True)
-    @mock.patch.object(irmc_common, 'get_irmc_client', spec_set=True,
-                       autospec=True)
+    @mock.patch.object(irmc_boot, 'attach_boot_iso_if_needed')
     def test__set_power_state_snmp_exception(self,
-                                             get_irmc_client_mock,
+                                             attach_boot_iso_if_needed_mock,
                                              _wait_power_state_mock):
-        irmc_client = get_irmc_client_mock.return_value
-        irmc_client.return_value = None
+        target_state = states.SOFT_REBOOT
         _wait_power_state_mock.side_effect = exception.SNMPFailure(
-            operation='test-operation', error='test-error')
+            "fake exception")
 
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=True) as task:
             self.assertRaises(exception.IRMCOperationError,
                               irmc_power._set_power_state,
                               task,
-                              states.SOFT_REBOOT)
+                              target_state)
+            attach_boot_iso_if_needed_mock.assert_called_once_with(
+                task)
+            _wait_power_state_mock.assert_called_once_with(
+                task, target_state)
 
 
 class IRMCPowerTestCase(db_base.DbTestCase):
