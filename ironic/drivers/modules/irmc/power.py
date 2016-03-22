@@ -171,6 +171,13 @@ def _set_power_state(task, target_state):
                 "'%s'") % target_state
         raise exception.InvalidParameterValue(msg)
 
+    except exception.SNMPFailure as snmp_exception:
+        LOG.error(_LE("iRMC failed to acknowledge the target state "
+                      "for node %(node_id)s. Error: %(error)s"),
+                  {'node_id': node.uuid, 'error': snmp_exception})
+        raise exception.IRMCOperationError(operation=target_state,
+                                           error=snmp_exception)
+
     except scci.SCCIClientError as irmc_exception:
         LOG.error(_LE("iRMC set_power_state failed to set state to %(tstate)s "
                       " for node %(node_id)s with error: %(error)s"),
@@ -179,13 +186,6 @@ def _set_power_state(task, target_state):
         operation = _('iRMC set_power_state')
         raise exception.IRMCOperationError(operation=operation,
                                            error=irmc_exception)
-
-    except exception.SNMPFailure as snmp_exception:
-        LOG.error(_LE("iRMC failed to acknowledge the target state "
-                      "for node %(node_id)s. Error: %(error)s"),
-                  {'node_id': node.uuid, 'error': snmp_exception})
-        raise exception.IRMCOperationError(operation=target_state,
-                                           error=snmp_exception)
 
 
 class IRMCPower(base.PowerInterface):
