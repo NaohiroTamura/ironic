@@ -218,9 +218,6 @@ SOFT_REBOOT = 'soft rebooting'
 SOFT_POWER_OFF = 'soft power off'
 """ Node is in the process of soft power off. """
 
-INJECT_NMI = 'inject nmi'
-""" Node is in the process of injecting NMI. """
-
 
 #####################
 # State machine model

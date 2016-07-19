@@ -458,8 +458,7 @@ class NodeStatesController(rest.RestController):
                           ir_states.POWER_OFF,
                           ir_states.REBOOT,
                           ir_states.SOFT_REBOOT,
-                          ir_states.SOFT_POWER_OFF,
-                          ir_states.INJECT_NMI]:
+                          ir_states.SOFT_POWER_OFF]:
             raise exception.InvalidStateRequested(
                 action=target, node=node_ident,
                 state=rpc_node.power_state)

@@ -85,8 +85,7 @@ def node_power_action(task, new_state):
         new_state)
     node = task.node
 
-    if new_state in (states.POWER_ON, states.REBOOT,
-                     states.SOFT_REBOOT, states.INJECT_NMI):
+    if new_state in (states.POWER_ON, states.REBOOT, states.SOFT_REBOOT):
         target_state = states.POWER_ON
     elif new_state in (states.POWER_OFF, states.SOFT_POWER_OFF):
         target_state = states.POWER_OFF
@@ -111,10 +110,12 @@ def node_power_action(task, new_state):
         notify_utils.emit_power_set_notification(
             task, fields.NotificationLevel.INFO,
             fields.NotificationStatus.END, new_state)
-        LOG.warning(_LW("Not going to change node power state because "
-                        "current state = requested state = '%(state)s'."),
-                    {'state': curr_state})
+        LOG.warning(_LW("Not going to change node %(node)s power "
+                        "state because current state = requested state "
+                        "= '%(state)s'."),
+                    {'node': node.uuid, 'state': curr_state})
 
+    curr_state = None
     try:
         curr_state = task.driver.power.get_power_state(task)
     except Exception as e:

@@ -45,8 +45,7 @@ class FakePower(base.PowerInterface):
 
     def set_power_state(self, task, power_state):
         if power_state not in [states.POWER_ON, states.POWER_OFF,
-                               states.SOFT_REBOOT, states.SOFT_POWER_OFF,
-                               states.INJECT_NMI]:
+                               states.SOFT_REBOOT, states.SOFT_POWER_OFF]:
             raise exception.InvalidParameterValue(
                 _("set_power_state called with an invalid power"
                   "state: %s.") % power_state)

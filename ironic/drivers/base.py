@@ -494,11 +494,14 @@ class PowerInterface(BaseInterface):
         """
 
     @abc.abstractmethod
-    def set_power_state(self, task, power_state):
+    def set_power_state(self, task, power_state, timeout=None):
         """Set the power state of the task's node.
 
         :param task: a TaskManager instance containing the node to act on.
         :param power_state: Any power state from :mod:`ironic.common.states`.
+        :param timeout: timeout positive integer (> 0) for any power state.
+          ``None`` indicates to use default timeout which depends on
+          ``power_state``[*]_ and driver.
         :raises: MissingParameterValue if a required parameter is missing.
         """
 
