@@ -472,7 +472,7 @@ def _sleep_time(iter):
     return iter ** 2
 
 
-def _set_and_wait(new_state, driver_info):
+def _set_and_wait(new_state, driver_info, timeout=None):
     """Helper function for DynamicLoopingCall.
 
     This method changes the power state and polls the BMC until the desired
@@ -485,6 +485,8 @@ def _set_and_wait(new_state, driver_info):
     method.
 
     :param new_state: desired power state
+    :param timeout: timeout positive integer (> 0) for any power state.
+      ``None`` indicates to use default timeout.
     :param driver_info: the ipmitool parameters for accessing a node.
     :returns: one of ironic.common.states
 
@@ -493,19 +495,15 @@ def _set_and_wait(new_state, driver_info):
     if new_state == states.POWER_ON:
         cmd_name = "on"
         target_state = states.POWER_ON
-        retry_timeout = CONF.ipmi.retry_timeout
+        retry_timeout = timeout or CONF.ipmi.retry_timeout
     elif new_state == states.POWER_OFF:
         cmd_name = "off"
         target_state = states.POWER_OFF
-        retry_timeout = CONF.ipmi.retry_timeout
+        retry_timeout = timeout or CONF.ipmi.retry_timeout
     elif new_state == states.SOFT_POWER_OFF:
         cmd_name = "soft"
         target_state = states.POWER_OFF
-        retry_timeout = CONF.ipmi.retry_timeout_soft
-    elif new_state == states.INJECT_NMI:
-        cmd_name = "diag"
-        target_state = states.POWER_ON
-        retry_timeout = CONF.ipmi.retry_timeout
+        retry_timeout = timeout or CONF.conductor.soft_power_off_timeout
 
     def _wait(mutable):
         try:
@@ -548,48 +546,43 @@ def _set_and_wait(new_state, driver_info):
     return status['power']
 
 
-def _power_on(driver_info):
+def _power_on(driver_info, timeout=None):
     """Turn the power ON for this node.
 
     :param driver_info: the ipmitool parameters for accessing a node.
+    :param timeout: timeout positive integer (> 0) for any power state.
+      ``None`` indicates to use default timeout.
     :returns: one of ironic.common.states POWER_ON or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
     """
-    return _set_and_wait(states.POWER_ON, driver_info)
+    return _set_and_wait(states.POWER_ON, driver_info, timeout=timeout)
 
 
-def _power_off(driver_info):
+def _power_off(driver_info, timeout=None):
     """Turn the power OFF for this node.
 
     :param driver_info: the ipmitool parameters for accessing a node.
+    :param timeout: timeout positive integer (> 0) for any power state.
+      ``None`` indicates to use default timeout.
     :returns: one of ironic.common.states POWER_OFF or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
     """
-    return _set_and_wait(states.POWER_OFF, driver_info)
+    return _set_and_wait(states.POWER_OFF, driver_info, timeout=timeout)
 
 
-def _soft_power_off(driver_info):
+def _soft_power_off(driver_info, timeout=None):
     """Turn the power SOFT OFF for this node.
 
     :param driver_info: the ipmitool parameters for accessing a node.
+    :param timeout: timeout positive integer (> 0) for any power state.
+      ``None`` indicates to use default timeout.
     :returns: one of ironic.common.states POWER_OFF or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
     """
-    return _set_and_wait(states.SOFT_POWER_OFF, driver_info)
-
-
-def _inject_nmi(driver_info):
-    """Inject NMI to this node.
-
-    :param driver_info: the ipmitool parameters for accessing a node.
-    :returns: one of ironic.common.states POWER_ON or ERROR.
-    :raises: IPMIFailure on an error from ipmitool (from _power_status call).
-
-    """
-    return _set_and_wait(states.INJECT_NMI, driver_info)
+    return _set_and_wait(states.SOFT_POWER_OFF, driver_info, timeout=timeout)
 
 
 def _power_status(driver_info):
@@ -829,13 +822,14 @@ class IPMIPower(base.PowerInterface):
 
     @METRICS.timer('IPMIPower.set_power_state')
     @task_manager.require_exclusive_lock
-    def set_power_state(self, task, new_state):
-        """Turn the power on, off, soft off or inject nmi.
+    def set_power_state(self, task, new_state, timeout=None):
+        """Turn the power on, off, or soft off.
 
         :param task: a TaskManager instance containing the node to act on.
         :param new_state: desired power state.
-            one of ironic.common.states POWER_ON, POWER_OFF, SOFT_POWER_OFF or
-            INJECT_NMI.
+            one of ironic.common.states POWER_ON, POWER_OFF, SOFT_POWER_OFF.
+        :param timeout: timeout positive integer (> 0) for any power state.
+          ``None`` indicates to use default timeout.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: MissingParameterValue if required ipmi parameters are missing
         :raises: PowerStateFailure if the power couldn't be set to pstate.
@@ -846,20 +840,17 @@ class IPMIPower(base.PowerInterface):
         if new_state == states.POWER_ON:
             driver_utils.ensure_next_boot_device(task, driver_info)
             target_state = states.POWER_ON
-            state = _power_on(driver_info)
+            state = _power_on(driver_info, timeout=timeout)
         elif new_state == states.POWER_OFF:
             target_state = states.POWER_OFF
-            state = _power_off(driver_info)
+            state = _power_off(driver_info, timeout=timeout)
         elif new_state == states.SOFT_POWER_OFF:
             target_state = states.POWER_OFF
-            state = _soft_power_off(driver_info)
+            state = _soft_power_off(driver_info, timeout=timeout)
         elif new_state == states.SOFT_REBOOT:
-            _soft_power_off(driver_info)
+            _soft_power_off(driver_info, timeout=timeout)
             target_state = states.POWER_ON
-            state = _power_on(driver_info)
-        elif new_state == states.INJECT_NMI:
-            target_state = states.POWER_ON
-            state = _inject_nmi(driver_info)
+            state = _power_on(driver_info, timeout=timeout)
         else:
             raise exception.InvalidParameterValue(
                 _("set_power_state called "
@@ -899,8 +890,7 @@ class IPMIPower(base.PowerInterface):
                   in :mod:`ironic.common.states`.
         """
         return [states.POWER_ON, states.POWER_OFF, states.REBOOT,
-                states.SOFT_REBOOT, states.SOFT_POWER_OFF,
-                states.INJECT_NMI]
+                states.SOFT_REBOOT, states.SOFT_POWER_OFF]
 
 
 class IPMIManagement(base.ManagementInterface):

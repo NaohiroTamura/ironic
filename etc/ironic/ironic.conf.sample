@@ -1768,15 +1768,6 @@
 #min_command_interval = 5
 
 
-#
-# Options defined in ironic.drivers.modules.ipmitool
-#
-
-# Maximum time in seconds to retry IPMI power soft operations.
-# (integer value)
-#retry_timeout_soft=600
-
-
 [irmc]
 
 #
