@@ -27,6 +27,7 @@ from ironic.common.i18n import _LE
 from ironic.common.i18n import _LI
 from ironic.common import states
 from ironic.conductor import task_manager
+from ironic.conf import CONF
 from ironic.drivers import base
 from ironic.drivers.modules import ipmitool
 from ironic.drivers.modules.irmc import boot as irmc_boot
@@ -65,8 +66,7 @@ if scci:
                   states.POWER_ON: scci.POWER_ON,
                   states.REBOOT: scci.POWER_RESET,
                   states.SOFT_REBOOT: scci.POWER_SOFT_CYCLE,
-                  states.SOFT_POWER_OFF: scci.POWER_SOFT_OFF,
-                  states.INJECT_NMI: scci.POWER_RAISE_NMI}
+                  states.SOFT_POWER_OFF: scci.POWER_SOFT_OFF}
 
 
 def _is_expected_power_state(target_state, boot_status_value):
@@ -80,14 +80,14 @@ def _is_expected_power_state(target_state, boot_status_value):
         boot_status_value in (BOOT_STATUS_VALUE['unknown'],
                               BOOT_STATUS_VALUE['off'])):
         return True
-    elif (target_state in (states.SOFT_REBOOT, states.INJECT_NMI) and
+    elif (target_state == states.SOFT_REBOOT and
           boot_status_value == BOOT_STATUS_VALUE['os-running']):
         return True
     else:
         return False
 
 
-def _wait_power_state(task, target_state):
+def _wait_power_state(task, target_state, timeout=None):
     """Wait for having changed to the target power state.
 
     :param task: A TaskManager instance containing the node to act on.
@@ -103,7 +103,8 @@ def _wait_power_state(task, target_state):
                                   d_info['irmc_snmp_security'])
 
     interval = CONF.irmc.snmp_polling_interval
-    max_retry = int(CONF.irmc.retry_timeout_soft / interval)
+    retry_timeout_soft = timeout or CONF.irmc.retry_timeout_soft
+    max_retry = int(retry_timeout_soft / interval)
 
     for i in range(0, max_retry):
         boot_status_value = snmp_client.get(BOOT_STATUS_OID)
@@ -143,11 +144,13 @@ def _wait_power_state(task, target_state):
                                        error=error)
 
 
-def _set_power_state(task, target_state):
+def _set_power_state(task, target_state, timeout=None):
     """Turn the server power on/off or do a reboot.
 
     :param task: a TaskManager instance containing the node to act on.
     :param target_state: target state of the node.
+    :param timeout: timeout positive integer (> 0) for any power state.
+      ``None`` indicates to use default timeout.
     :raises: InvalidParameterValue if an invalid power state was specified.
     :raises: MissingParameterValue if some mandatory information
         is missing on the node
@@ -162,9 +165,8 @@ def _set_power_state(task, target_state):
     try:
         irmc_client(STATES_MAP[target_state])
 
-        if target_state in (states.SOFT_REBOOT, states.SOFT_POWER_OFF,
-                            states.INJECT_NMI):
-            _wait_power_state(task, target_state)
+        if target_state in (states.SOFT_REBOOT, states.SOFT_POWER_OFF):
+            _wait_power_state(task, target_state, timeout=timeout)
 
     except KeyError:
         msg = _("_set_power_state called with invalid power state "
@@ -230,17 +232,19 @@ class IRMCPower(base.PowerInterface):
 
     @METRICS.timer('IRMCPower.set_power_state')
     @task_manager.require_exclusive_lock
-    def set_power_state(self, task, power_state):
+    def set_power_state(self, task, power_state, timeout=None):
         """Set the power state of the task's node.
 
         :param task: a TaskManager instance containing the node to act on.
         :param power_state: Any power state from :mod:`ironic.common.states`.
+        :param timeout: timeout positive integer (> 0) for any power state.
+          ``None`` indicates to use default timeout.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: MissingParameterValue if some mandatory information
             is missing on the node
         :raises: IRMCOperationError if failed to set the power state.
         """
-        _set_power_state(task, power_state)
+        _set_power_state(task, power_state, timeout=timeout)
 
     @METRICS.timer('IRMCPower.reboot')
     @task_manager.require_exclusive_lock
@@ -266,5 +270,4 @@ class IRMCPower(base.PowerInterface):
                   in :mod:`ironic.common.states`.
         """
         return [states.POWER_ON, states.POWER_OFF, states.REBOOT,
-                states.SOFT_REBOOT, states.SOFT_POWER_OFF,
-                states.INJECT_NMI]
+                states.SOFT_REBOOT, states.SOFT_POWER_OFF]
