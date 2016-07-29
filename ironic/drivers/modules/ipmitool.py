@@ -491,19 +491,18 @@ def _set_and_wait(new_state, driver_info, timeout=None):
     :returns: one of ironic.common.states
 
     """
+    retry_timeout = timeout or CONF.ipmi.retry_timeout
 
     if new_state == states.POWER_ON:
         cmd_name = "on"
         target_state = states.POWER_ON
-        retry_timeout = timeout or CONF.ipmi.retry_timeout
     elif new_state == states.POWER_OFF:
         cmd_name = "off"
         target_state = states.POWER_OFF
-        retry_timeout = timeout or CONF.ipmi.retry_timeout
     elif new_state == states.SOFT_POWER_OFF:
         cmd_name = "soft"
         target_state = states.POWER_OFF
-        retry_timeout = timeout or CONF.conductor.soft_power_off_timeout
+        retry_timeout = timeout
 
     def _wait(mutable):
         try:
