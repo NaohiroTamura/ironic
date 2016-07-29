@@ -2353,7 +2353,8 @@ class TestPut(test_api_base.BaseApiTest):
         self.mock_cnps.assert_called_once_with(mock.ANY,
                                                self.node.uuid,
                                                states.POWER_ON,
-                                               'test-topic')
+                                               timeout=None,
+                                               topic='test-topic')
         # Check location header
         self.assertIsNotNone(response.location)
         expected_location = '/v1/nodes/%s/states' % self.node.uuid
@@ -2375,7 +2376,8 @@ class TestPut(test_api_base.BaseApiTest):
         self.mock_cnps.assert_called_once_with(mock.ANY,
                                                self.node.uuid,
                                                states.POWER_ON,
-                                               'test-topic')
+                                               timeout=None,
+                                               topic='test-topic')
         # Check location header
         self.assertIsNotNone(response.location)
         expected_location = '/v1/nodes/%s/states' % self.node.name

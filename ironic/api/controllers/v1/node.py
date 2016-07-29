@@ -433,13 +433,15 @@ class NodeStatesController(rest.RestController):
             raise
 
     @METRICS.timer('NodeStatesController.power')
-    @expose.expose(None, types.uuid_or_name, wtypes.text,
+    @expose.expose(None, types.uuid_or_name, wtypes.text, wtypes.text,
                    status_code=http_client.ACCEPTED)
-    def power(self, node_ident, target):
+    def power(self, node_ident, target, timeout=None):
         """Set the power state of the node.
 
         :param node_ident: the UUID or logical name of a node.
         :param target: The desired power state of the node.
+        :param timeout: timeout positive integer (> 0) for any power state.
+          ``None`` indicates to use default timeout.
         :raises: ClientSideError (HTTP 409) if a power operation is
                  already in progress.
         :raises: InvalidStateRequested (HTTP 400) if the requested target
@@ -472,7 +474,8 @@ class NodeStatesController(rest.RestController):
 
         pecan.request.rpcapi.change_node_power_state(pecan.request.context,
                                                      rpc_node.uuid, target,
-                                                     topic)
+                                                     timeout=timeout,
+                                                     topic=topic)
         # Set the HTTP Location Header
         url_args = '/'.join([node_ident, 'states'])
         pecan.response.location = link.build_url('nodes', url_args)

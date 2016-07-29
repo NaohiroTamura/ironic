@@ -43,7 +43,7 @@ class FakePower(base.PowerInterface):
     def get_power_state(self, task):
         return task.node.power_state
 
-    def set_power_state(self, task, power_state):
+    def set_power_state(self, task, power_state, timeout=None):
         if power_state not in [states.POWER_ON, states.POWER_OFF,
                                states.SOFT_REBOOT, states.SOFT_POWER_OFF]:
             raise exception.InvalidParameterValue(

@@ -179,7 +179,8 @@ class ConductorAPI(object):
         cctxt = self.client.prepare(topic=topic or self.topic, version='1.1')
         return cctxt.call(context, 'update_node', node_obj=node_obj)
 
-    def change_node_power_state(self, context, node_id, new_state, topic=None):
+    def change_node_power_state(self, context, node_id, new_state,
+                                timeout=None, topic=None):
         """Change a node's power state.
 
         Synchronously, acquire lock and start the conductor background task
@@ -188,6 +189,8 @@ class ConductorAPI(object):
         :param context: request context.
         :param node_id: node id or uuid.
         :param new_state: one of ironic.common.states power state values
+        :param timeout: timeout positive integer (> 0) for any power state.
+           ``None`` indicates to use default timeout.
         :param topic: RPC topic. Defaults to self.topic.
         :raises: NoFreeConductorWorker when there is no free worker to start
                  async task.
@@ -195,7 +198,7 @@ class ConductorAPI(object):
         """
         cctxt = self.client.prepare(topic=topic or self.topic, version='1.6')
         return cctxt.call(context, 'change_node_power_state', node_id=node_id,
-                          new_state=new_state)
+                          timeout=timeout, new_state=new_state)
 
     def vendor_passthru(self, context, node_id, driver_method, http_method,
                         info, topic=None):

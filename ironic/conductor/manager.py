@@ -179,7 +179,8 @@ class ConductorManager(base_manager.BaseConductorManager):
     @messaging.expected_exceptions(exception.InvalidParameterValue,
                                    exception.NoFreeConductorWorker,
                                    exception.NodeLocked)
-    def change_node_power_state(self, context, node_id, new_state):
+    def change_node_power_state(self, context, node_id, new_state,
+                                timeout=None):
         """RPC method to encapsulate changes to a node's state.
 
         Perform actions such as power on, power off. The validation is
@@ -191,6 +192,8 @@ class ConductorManager(base_manager.BaseConductorManager):
         :param context: an admin context.
         :param node_id: the id or uuid of a node.
         :param new_state: the desired power state of the node.
+        :param timeout: timeout positive integer (> 0) for any power state.
+          ``None`` indicates to use default timeout.
         :raises: NoFreeConductorWorker when there is no free worker to start
                  async task.
 
@@ -202,6 +205,13 @@ class ConductorManager(base_manager.BaseConductorManager):
         with task_manager.acquire(context, node_id, shared=False,
                                   purpose='changing node power state') as task:
             task.driver.power.validate(task)
+
+            if new_state in (states.POWER_OFF, states.SOFT_POWER_OFF):
+                power_timeout = (timeout or
+                                 CONF.conductor.soft_power_off_timeout)
+            else:
+                power_timeout = timeout
+
             # Set the target_power_state and clear any last_error, since we're
             # starting a new operation. This will expose to other processes
             # and clients that work is in progress.
@@ -209,12 +219,13 @@ class ConductorManager(base_manager.BaseConductorManager):
                 task.node.target_power_state = states.POWER_ON
             else:
                 task.node.target_power_state = new_state
+
             task.node.last_error = None
             task.node.save()
             task.set_spawn_error_hook(utils.power_state_error_handler,
                                       task.node, task.node.power_state)
             task.spawn_after(self._spawn_worker, utils.node_power_action,
-                             task, new_state)
+                             task, new_state, timeout=power_timeout)
 
     @METRICS.timer('ConductorManager.vendor_passthru')
     @messaging.expected_exceptions(exception.NoFreeConductorWorker,

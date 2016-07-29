@@ -67,13 +67,15 @@ def node_set_boot_device(task, device, persistent=False):
 
 
 @task_manager.require_exclusive_lock
-def node_power_action(task, new_state):
+def node_power_action(task, new_state, timeout=None):
     """Change power state or reset for a node.
 
     Perform the requested power action if the transition is required.
 
     :param task: a TaskManager instance containing the node to act on.
     :param new_state: Any power state from ironic.common.states.
+    :param timeout: timeout positive integer (> 0) for any power state.
+      ``None`` indicates to use default timeout.
     :raises: InvalidParameterValue when the wrong state is specified
              or the wrong driver info is specified.
     :raises: other exceptions by the node's power driver if something
@@ -154,7 +156,7 @@ def node_power_action(task, new_state):
     # take power action
     try:
         if new_state != states.REBOOT:
-            task.driver.power.set_power_state(task, new_state)
+            task.driver.power.set_power_state(task, new_state, timeout=timeout)
         else:
             task.driver.power.reboot(task)
     except Exception as e:
