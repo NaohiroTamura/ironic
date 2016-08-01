@@ -15,6 +15,7 @@
 from oslo_config import cfg
 from oslo_log import log
 from oslo_utils import excutils
+from oslo_utils import reflection
 
 from ironic.common import exception
 from ironic.common.i18n import _, _LE, _LI, _LW
@@ -156,7 +157,12 @@ def node_power_action(task, new_state, timeout=None):
     # take power action
     try:
         if new_state != states.REBOOT:
-            task.driver.power.set_power_state(task, new_state, timeout=timeout)
+            sig = reflection.get_signature(task.driver.power.set_power_state)
+            if 'timeout' in sig.parameters:
+                task.driver.power.set_power_state(task, new_state,
+                                                  timeout=timeout)
+            else:
+                task.driver.power.set_power_state(task, new_state)
         else:
             task.driver.power.reboot(task)
     except Exception as e:

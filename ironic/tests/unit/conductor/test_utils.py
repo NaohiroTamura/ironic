@@ -479,8 +479,7 @@ class NodePowerActionTestCase(base.DbTestCase):
                 node.refresh()
                 get_power_mock.assert_called_once_with(mock.ANY)
                 set_power_mock.assert_called_once_with(mock.ANY,
-                                                       states.POWER_ON,
-                                                       timeout=None)
+                                                       states.POWER_ON)
                 self.assertEqual(states.POWER_OFF, node['power_state'])
                 self.assertIsNone(node['target_power_state'])
                 self.assertIsNotNone(node['last_error'])

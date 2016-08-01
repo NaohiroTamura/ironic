@@ -169,8 +169,7 @@ class ChangeNodePowerStateTestCase(mgr_utils.ServiceSetUpMixin,
                 self._stop_service()
 
                 get_power_mock.assert_called_once_with(mock.ANY)
-                set_power_mock.assert_called_once_with(mock.ANY, new_state,
-                                                       timeout=None)
+                set_power_mock.assert_called_once_with(mock.ANY, new_state)
                 node.refresh()
                 self.assertEqual(initial_state, node.power_state)
                 self.assertIsNone(node.target_power_state)
