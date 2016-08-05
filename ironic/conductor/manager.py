@@ -206,7 +206,7 @@ class ConductorManager(base_manager.BaseConductorManager):
                                   purpose='changing node power state') as task:
             task.driver.power.validate(task)
 
-            if new_state in (states.POWER_OFF, states.SOFT_POWER_OFF):
+            if new_state in (states.SOFT_REBOOT, states.SOFT_POWER_OFF):
                 power_timeout = (timeout or
                                  CONF.conductor.soft_power_off_timeout)
             else:

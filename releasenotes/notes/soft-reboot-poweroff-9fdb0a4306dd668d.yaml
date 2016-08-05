@@ -1,0 +1,5 @@
+---
+features:
+  - Support "soft reboot" and "soft power off" requests to change
+    node's power state, and also introduce "timeout" optional
+    parameter.

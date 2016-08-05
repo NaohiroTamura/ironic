@@ -102,6 +102,12 @@ PROVISION_ACTION_STATES = (ir_states.VERBS['manage'],
 
 _NODES_CONTROLLER_RESERVED_WORDS = None
 
+ALLOWED_TARGET_POWER_STATES = (ir_states.POWER_ON,
+                               ir_states.POWER_OFF,
+                               ir_states.REBOOT,
+                               ir_states.SOFT_REBOOT,
+                               ir_states.SOFT_POWER_OFF)
+
 
 def get_nodes_controller_reserved_names():
     global _NODES_CONTROLLER_RESERVED_WORDS
@@ -433,7 +439,7 @@ class NodeStatesController(rest.RestController):
             raise
 
     @METRICS.timer('NodeStatesController.power')
-    @expose.expose(None, types.uuid_or_name, wtypes.text, wtypes.text,
+    @expose.expose(None, types.uuid_or_name, wtypes.text, int,
                    status_code=http_client.ACCEPTED)
     def power(self, node_ident, target, timeout=None):
         """Set the power state of the node.
@@ -446,6 +452,8 @@ class NodeStatesController(rest.RestController):
                  already in progress.
         :raises: InvalidStateRequested (HTTP 400) if the requested target
                  state is not valid or if the node is in CLEANING state.
+        :raises: NotAcceptable for soft reboot, soft power off or timeout,
+          if requested version of the API is less than 1.21.
 
         """
         cdict = pecan.request.context.to_policy_values()
@@ -456,11 +464,11 @@ class NodeStatesController(rest.RestController):
         rpc_node = api_utils.get_rpc_node(node_ident)
         topic = pecan.request.rpcapi.get_topic_for(rpc_node)
 
-        if target not in [ir_states.POWER_ON,
-                          ir_states.POWER_OFF,
-                          ir_states.REBOOT,
-                          ir_states.SOFT_REBOOT,
-                          ir_states.SOFT_POWER_OFF]:
+        if ((target in [ir_states.SOFT_REBOOT, ir_states.SOFT_POWER_OFF] or
+             timeout) and not api_utils.allow_soft_power_off()):
+            raise exception.NotAcceptable()
+
+        if target not in ALLOWED_TARGET_POWER_STATES:
             raise exception.InvalidStateRequested(
                 action=target, node=node_ident,
                 state=rpc_node.power_state)
