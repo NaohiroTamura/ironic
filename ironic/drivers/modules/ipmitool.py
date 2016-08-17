@@ -52,7 +52,6 @@ from ironic.common import states
 from ironic.common import utils
 from ironic.conductor import task_manager
 from ironic.conf import CONF
-from ironic.conductor import utils as conductor_utils
 from ironic.drivers import base
 from ironic.drivers.modules import console_utils
 from ironic.drivers.modules import deploy_utils
@@ -826,7 +825,8 @@ class IPMIPower(base.PowerInterface):
 
         :param task: a TaskManager instance containing the node to act on.
         :param new_state: desired power state.
-            one of ironic.common.states POWER_ON, POWER_OFF, SOFT_POWER_OFF.
+            one of ironic.common.states, POWER_ON, POWER_OFF, SOFT_POWER_OFF,
+            or SOFT_REBOOT.
         :param timeout: timeout positive integer (> 0) for any power state.
           ``None`` indicates to use default timeout.
         :raises: InvalidParameterValue if an invalid power state was specified.
