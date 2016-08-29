@@ -180,7 +180,7 @@ class ConductorAPI(object):
         return cctxt.call(context, 'update_node', node_obj=node_obj)
 
     def change_node_power_state(self, context, node_id, new_state,
-                                timeout=None, topic=None):
+                                topic=None, timeout=None):
         """Change a node's power state.
 
         Synchronously, acquire lock and start the conductor background task

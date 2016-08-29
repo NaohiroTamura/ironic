@@ -162,10 +162,10 @@ def node_power_action(task, new_state, timeout=None):
                 task.driver.power.set_power_state(task, new_state,
                                                   timeout=timeout)
             else:
-                task.driver.power.set_power_state(task, new_state)
                 LOG.error(_("The set_power_state method of %s(driver_name)s "
                             "doesn't support 'timeout' parameter."),
                           {'driver_name': node.driver})
+                task.driver.power.set_power_state(task, new_state)
         else:
             task.driver.power.reboot(task)
     except Exception as e:
