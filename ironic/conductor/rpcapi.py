@@ -85,6 +85,7 @@ class ConductorAPI(object):
     |    1.36 - Added create_node
     |    1.37 - Added destroy_volume_target and update_volume_target
     |    1.38 - Added vif_attach, vif_detach, vif_list
+    |    1.39 - Added timeout optional parameter to change_node_power_state
 
     """
 
@@ -198,7 +199,7 @@ class ConductorAPI(object):
         """
         cctxt = self.client.prepare(topic=topic or self.topic, version='1.6')
         return cctxt.call(context, 'change_node_power_state', node_id=node_id,
-                          timeout=timeout, new_state=new_state)
+                          new_state=new_state, timeout=timeout)
 
     def vendor_passthru(self, context, node_id, driver_method, http_method,
                         info, topic=None):
