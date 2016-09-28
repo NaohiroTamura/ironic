@@ -1473,9 +1473,10 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
         mock_off.assert_called_once_with(self.info, timeout=2)
         self.assertFalse(mock_on.called)
 
+    @mock.patch.object(driver_utils, 'ensure_next_boot_device', autospec=True)
     @mock.patch.object(ipmi, '_power_on', autospec=True)
     @mock.patch.object(ipmi, '_soft_power_off', autospec=True)
-    def test_set_soft_reboot_ok(self, mock_off, mock_on):
+    def test_set_soft_reboot_ok(self, mock_off, mock_on, mock_next_boot):
         self.config(retry_timeout=0, group='ipmi')
 
         mock_on.return_value = states.POWER_ON
@@ -1484,13 +1485,16 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
                                   self.node['uuid']) as task:
             self.driver.power.set_power_state(task,
                                               states.SOFT_REBOOT)
+            mock_next_boot.assert_called_once_with(task, self.info)
 
         mock_off.assert_called_once_with(self.info, timeout=None)
         mock_on.assert_called_once_with(self.info, timeout=None)
 
+    @mock.patch.object(driver_utils, 'ensure_next_boot_device', autospec=True)
     @mock.patch.object(ipmi, '_power_on', autospec=True)
     @mock.patch.object(ipmi, '_soft_power_off', autospec=True)
-    def test_set_soft_reboot_timeout_ok(self, mock_off, mock_on):
+    def test_set_soft_reboot_timeout_ok(self, mock_off, mock_on,
+                                        mock_next_boot):
         self.config(retry_timeout=0, group='ipmi')
 
         mock_on.return_value = states.POWER_ON
@@ -1500,6 +1504,7 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
             self.driver.power.set_power_state(task,
                                               states.SOFT_REBOOT,
                                               timeout=2)
+            mock_next_boot.assert_called_once_with(task, self.info)
 
         mock_off.assert_called_once_with(self.info, timeout=2)
         mock_on.assert_called_once_with(self.info, timeout=2)
