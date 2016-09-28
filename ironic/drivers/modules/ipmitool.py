@@ -501,7 +501,7 @@ def _set_and_wait(new_state, driver_info, timeout=None):
     elif new_state == states.SOFT_POWER_OFF:
         cmd_name = "soft"
         target_state = states.POWER_OFF
-        retry_timeout = timeout
+        retry_timeout = timeout or CONF.conductor.soft_power_off_timeout
 
     def _wait(mutable):
         try:
