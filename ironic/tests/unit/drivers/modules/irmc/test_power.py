@@ -74,7 +74,7 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
     def test__wait_power_state_ok(self, snmpclient_mock):
         target_state = states.SOFT_POWER_OFF
         self.config(snmp_polling_interval=1, group='irmc')
-        self.config(retry_timeout_soft=3, group='irmc')
+        self.config(soft_power_off_timeout=3, group='conductor')
         snmpclient_mock.return_value = mock.Mock(
             **{'get.side_effect': [8, 8, 2]})
 
@@ -93,7 +93,7 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
     def test__wait_power_state_timeout(self, snmpclient_mock):
         target_state = states.SOFT_POWER_OFF
         self.config(snmp_polling_interval=1, group='irmc')
-        self.config(retry_timeout_soft=2, group='irmc')
+        self.config(soft_power_off_timeout=2, group='conductor')
         snmpclient_mock.return_value = mock.Mock(
             **{'get.side_effect': [8, 8, 2]})
 

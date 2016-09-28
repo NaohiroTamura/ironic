@@ -103,7 +103,7 @@ def _wait_power_state(task, target_state, timeout=None):
                                   d_info['irmc_snmp_security'])
 
     interval = CONF.irmc.snmp_polling_interval
-    retry_timeout_soft = timeout or CONF.irmc.retry_timeout_soft
+    retry_timeout_soft = timeout or CONF.conductor.soft_power_off_timeout
     max_retry = int(retry_timeout_soft / interval)
 
     for i in range(0, max_retry):

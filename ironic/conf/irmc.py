@@ -69,10 +69,6 @@ opts = [
     cfg.IntOpt('snmp_polling_interval',
                default=10,
                help='SNMP polling interval in second'),
-    cfg.IntOpt('retry_timeout_soft',
-               default=600,
-               help=_('Maximum time in seconds to retry IPMI power soft '
-                      'operations.')),
 ]
 
 
