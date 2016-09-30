@@ -196,6 +196,8 @@ class ConductorManager(base_manager.BaseConductorManager):
           ``None`` indicates to use default timeout.
         :raises: NoFreeConductorWorker when there is no free worker to start
                  async task.
+        :raises: InvalidParameterValue
+        :raises: MissingParameterValue
 
         """
         LOG.debug("RPC change_node_power_state called for node %(node)s. "
@@ -205,6 +207,13 @@ class ConductorManager(base_manager.BaseConductorManager):
         with task_manager.acquire(context, node_id, shared=False,
                                   purpose='changing node power state') as task:
             task.driver.power.validate(task)
+
+            if (new_state not in
+                task.driver.power.get_supported_power_states(task)):
+                raise exception.InvalidParameterValue(
+                    _('The driver %(driver)s does not support the power state,'
+                      ' %(state)s') %
+                    {'driver': task.node.driver, 'state': new_state})
 
             if new_state in (states.SOFT_REBOOT, states.SOFT_POWER_OFF):
                 power_timeout = (timeout or

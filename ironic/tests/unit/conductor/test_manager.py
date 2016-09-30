@@ -381,6 +381,33 @@ class ChangeNodePowerStateTestCase(mgr_utils.ServiceSetUpMixin,
                                      'baremetal.node.power_set.end',
                                      obj_fields.NotificationLevel.INFO)
 
+    def test_change_node_power_state_unsupported_state(self):
+        # Test change_node_power_state where unsupported power state raises
+        # an exception
+        initial_state = states.POWER_ON
+        node = obj_utils.create_test_node(self.context, driver='fake',
+                                          power_state=initial_state)
+        self._start_service()
+
+        with mock.patch.object(self.driver.power,
+                               'get_supported_power_states') as supported_mock:
+            supported_mock.return_value = [
+                states.POWER_ON, states.POWER_OFF, states.REBOOT]
+
+            exc = self.assertRaises(messaging.rpc.ExpectedException,
+                                    self.service.change_node_power_state,
+                                    self.context,
+                                    node.uuid,
+                                    states.SOFT_POWER_OFF)
+
+            self.assertEqual(exception.InvalidParameterValue, exc.exc_info[0])
+
+            node.refresh()
+            supported_mock.assert_called_once_with(mock.ANY)
+            self.assertEqual(states.POWER_ON, node.power_state)
+            self.assertIsNone(node.target_power_state)
+            self.assertIsNone(node.last_error)
+
 
 @mgr_utils.mock_record_keepalive
 class CreateNodeTestCase(mgr_utils.ServiceSetUpMixin,
