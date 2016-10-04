@@ -318,6 +318,20 @@ class TestApiUtils(base.TestCase):
         utils.check_allow_management_verbs('rebuild')
 
     @mock.patch.object(pecan, 'request', spec_set=['version'])
+    def test_allow_soft_power_off(self, mock_request):
+        mock_request.version.minor = 27
+        self.assertTrue(utils.allow_soft_power_off())
+        mock_request.version.minor = 26
+        self.assertFalse(utils.allow_soft_power_off())
+
+    @mock.patch.object(pecan, 'request', spec_set=['version'])
+    def test_allow_supported_power_states(self, mock_request):
+        mock_request.version.minor = 32
+        self.assertTrue(utils.allow_supported_power_states())
+        mock_request.version.minor = 31
+        self.assertFalse(utils.allow_supported_power_states())
+
+    @mock.patch.object(pecan, 'request', spec_set=['version'])
     def test_allow_inject_nmi(self, mock_request):
         mock_request.version.minor = 29
         self.assertTrue(utils.allow_inject_nmi())

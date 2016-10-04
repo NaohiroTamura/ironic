@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    Adds a new field called ``supported_power_states`` to the Node API object.
+    The new field holds a list with all the allowed power states for that node.
+    The following API endpoints support this feature in Ironic API
+    microversion 1.32 and above.
+
+    * Create Node, `POST /v1/nodes`
+    * List Nodes Detailed, `GET /v1/nodes/detail`
+    * Show Node Details, `GET /v1/nodes/{node_ident}`
+    * Update Node, `PATCH /v1/nodes/{node_ident}`
+    * Node State Summary, `GET /v1/nodes/{node_ident}/states`

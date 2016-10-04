@@ -288,6 +288,12 @@ class RPCAPITestCase(base.DbTestCase):
                           version='1.17',
                           node_id=self.fake_node['uuid'])
 
+    def test_get_supported_power_states(self):
+        self._test_rpcapi('get_supported_power_states',
+                          'call',
+                          version='1.41',
+                          node_id=self.fake_node['uuid'])
+
     def test_get_node_vendor_passthru_methods(self):
         self._test_rpcapi('get_node_vendor_passthru_methods',
                           'call',

@@ -2,6 +2,11 @@
 REST API Version History
 ========================
 
+**1.32** (Ocata)
+
+    Add a new field called ``supported_power_states`` to the Node object.
+    The new field holds a list with all the allowed power states for that node.
+
 **1.31** (Ocata)
 
     Added the following fields to the node object, to allow getting and

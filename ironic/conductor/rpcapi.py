@@ -88,11 +88,12 @@ class ConductorAPI(object):
     |    1.38 - Added vif_attach, vif_detach, vif_list
     |    1.39 - Added timeout optional parameter to change_node_power_state
     |    1.40 - Added inject_nmi
+    |    1.41 - Added get_supported_power_states
 
     """
 
     # NOTE(rloo): This must be in sync with manager.ConductorManager's.
-    RPC_API_VERSION = '1.40'
+    RPC_API_VERSION = '1.41'
 
     def __init__(self, topic=None):
         super(ConductorAPI, self).__init__()
@@ -207,6 +208,19 @@ class ConductorAPI(object):
         cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
         return cctxt.call(context, 'change_node_power_state', node_id=node_id,
                           new_state=new_state, timeout=timeout)
+
+    def get_supported_power_states(self, context, node_id, topic=None):
+        """Get a list of the supported power states.
+
+        :param context: request context.
+        :param node_id: node id or uuid.
+        :param topic: RPC topic. Defaults to self.topic.
+        :returns: A list with the supported power states defined
+                  in :mod:`ironic.common.states`.
+        """
+        cctxt = self.client.prepare(topic=topic or self.topic, version='1.41')
+        return cctxt.call(context, 'get_supported_power_states',
+                          node_id=node_id)
 
     def vendor_passthru(self, context, node_id, driver_method, http_method,
                         info, topic=None):
