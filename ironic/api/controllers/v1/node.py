@@ -109,6 +109,13 @@ ALLOWED_TARGET_POWER_STATES = (ir_states.POWER_ON,
                                ir_states.SOFT_POWER_OFF)
 
 
+def _get_supported_power_states(rpc_node):
+    """"Get a list of the supported power states"""
+    topic = pecan.request.rpcapi.get_topic_for(rpc_node)
+    return pecan.request.rpcapi.get_supported_power_states(
+        pecan.request.context, rpc_node.uuid, topic)
+
+
 def get_nodes_controller_reserved_names():
     global _NODES_CONTROLLER_RESERVED_WORDS
     if _NODES_CONTROLLER_RESERVED_WORDS is None:
@@ -144,6 +151,9 @@ def hide_fields_in_newer_versions(obj):
 
     if pecan.request.version.minor < versions.MINOR_20_NETWORK_INTERFACE:
         obj.network_interface = wsme.Unset
+
+    if pecan.request.version.minor < versions.MINOR_23_SOFT_POWER_OFF:
+        obj.supported_power_states = wsme.Unset
 
     if not api_utils.allow_resource_class():
         obj.resource_class = wsme.Unset
@@ -394,6 +404,9 @@ class NodeStates(base.APIBase):
     """The desired RAID configuration, to be used the next time the node
     is configured."""
 
+    supported_power_states = wsme.wsattr([wtypes.text], readonly=True)
+    """A list of the supported power states of the node"""
+
     @staticmethod
     def convert(rpc_node):
         attr_list = ['console_enabled', 'last_error', 'power_state',
@@ -401,6 +414,8 @@ class NodeStates(base.APIBase):
                      'target_provision_state', 'provision_updated_at']
         if api_utils.allow_raid_config():
             attr_list.extend(['raid_config', 'target_raid_config'])
+        if api_utils.allow_soft_power_off():
+            attr_list.extend(['supported_power_states'])
         states = NodeStates()
         for attr in attr_list:
             setattr(states, attr, getattr(rpc_node, attr))
@@ -417,7 +432,8 @@ class NodeStates(base.APIBase):
                      power_state=ir_states.POWER_ON,
                      provision_state=None,
                      raid_config=None,
-                     target_raid_config=None)
+                     target_raid_config=None,
+                     supported_power_states=[])
         return sample
 
 
@@ -446,6 +462,12 @@ class NodeStatesController(rest.RestController):
         # DB. Ironic counts with a periodic task that verify the current
         # power states of the nodes and update the DB accordingly.
         rpc_node = api_utils.get_rpc_node(node_ident)
+        # NOTE(naohirot): As an excepttion, 'supported_power_states' doesn't
+        # come from the DB.
+        if api_utils.allow_soft_power_off():
+            rpc_node.supported_power_states = (
+                _get_supported_power_states(rpc_node))
+
         return NodeStates.convert(rpc_node)
 
     @METRICS.timer('NodeStatesController.raid')
@@ -795,6 +817,9 @@ class Node(base.APIBase):
        nodes. Used, for example, to classify nodes in Nova's placement
        engine."""
 
+    supported_power_states = wsme.wsattr([wtypes.text], readonly=True)
+    """A list of the supported power states of the node"""
+
     # NOTE: properties should use a class to enforce required properties
     #       current list: arch, cpus, disk, ram, image
     properties = {wtypes.text: types.jsontype}
@@ -946,6 +971,11 @@ class Node(base.APIBase):
             if node.instance_info.get('image_url'):
                 node.instance_info['image_url'] = "******"
 
+        # NOTE(naohirot): As an excepttion, 'supported_power_states' doesn't
+        # come from the DB.
+        if api_utils.allow_soft_power_off():
+            node.supported_power_states = _get_supported_power_states(rpc_node)
+
         update_state_in_older_versions(node)
         hide_fields_in_newer_versions(node)
         show_states_links = (
@@ -981,7 +1011,9 @@ class Node(base.APIBase):
                      boot_interface=None, console_interface=None,
                      deploy_interface=None, inspect_interface=None,
                      management_interface=None, power_interface=None,
-                     raid_interface=None, vendor_interface=None)
+                     raid_interface=None, vendor_interface=None,
+                     supported_power_states=[
+                         "power on", "power off", "rebooting"])
         # NOTE(matty_dubs): The chassis_uuid getter() is based on the
         # _chassis_uuid variable:
         sample._chassis_uuid = 'edcad704-b2da-41d5-96d9-afd580ecfa12'

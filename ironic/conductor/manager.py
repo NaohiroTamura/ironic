@@ -259,6 +259,23 @@ class ConductorManager(base_manager.BaseConductorManager):
             task.spawn_after(self._spawn_worker, utils.node_power_action,
                              task, new_state, timeout=power_timeout)
 
+    @METRICS.timer('ConductorManager.get_supported_power_states')
+    @messaging.expected_exceptions(exception.NodeLocked)
+    def get_supported_power_states(self, context, node_id):
+        """RPC method to encapsulate getting node's supported power states.
+
+        Synchronously get node's supported power states.
+
+        :param context: an admin context.
+        :param node_id: the id or uuid of a node.
+        :returns: A list with the supported power states defined
+                  in :mod:`ironic.common.states`.
+        """
+        with task_manager.acquire(
+                context, node_id, shared=True,
+                purpose="getting node's supported power states") as task:
+            return task.driver.power.get_supported_power_states(task)
+
     @METRICS.timer('ConductorManager.vendor_passthru')
     @messaging.expected_exceptions(exception.NoFreeConductorWorker,
                                    exception.NodeLocked,
