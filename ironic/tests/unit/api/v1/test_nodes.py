@@ -88,7 +88,13 @@ class TestListNodes(test_api_base.BaseApiTest):
         data = self.get_json('/nodes')
         self.assertEqual([], data['nodes'])
 
-    def test_one(self):
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states')
+    def test_one(self, mock_get_supported_power_states):
+        expected_supported_power_states = [
+            "power on", "power off", "rebooting"]
+        mock_get_supported_power_states.return_value = (
+            expected_supported_power_states)
+
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id)
         data = self.get_json(
@@ -118,8 +124,16 @@ class TestListNodes(test_api_base.BaseApiTest):
         self.assertNotIn('resource_class', data['nodes'][0])
         # never expose the chassis_id
         self.assertNotIn('chassis_id', data['nodes'][0])
+        self.assertEqual(expected_supported_power_states,
+                         data['nodes'][0]['supported_power_states'])
 
-    def test_get_one(self):
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states')
+    def test_get_one(self, mock_get_supported_power_states):
+        expected_supported_power_states = [
+            "power on", "power off", "rebooting"]
+        mock_get_supported_power_states.return_value = (
+            expected_supported_power_states)
+
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id)
         data = self.get_json(
@@ -149,6 +163,8 @@ class TestListNodes(test_api_base.BaseApiTest):
         self.assertIn('resource_class', data)
         # never expose the chassis_id
         self.assertNotIn('chassis_id', data)
+        self.assertEqual(expected_supported_power_states,
+                         data['supported_power_states'])
 
     def test_node_states_field_hidden_in_lower_version(self):
         node = obj_utils.create_test_node(self.context,
@@ -158,6 +174,8 @@ class TestListNodes(test_api_base.BaseApiTest):
             headers={api_base.Version.string: '1.8'})
         self.assertNotIn('states', data)
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     def test_get_one_custom_fields(self):
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id)
@@ -166,8 +184,12 @@ class TestListNodes(test_api_base.BaseApiTest):
             '/nodes/%s?fields=%s' % (node.uuid, fields),
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         # We always append "links"
-        self.assertItemsEqual(['extra', 'instance_info', 'links'], data)
+        self.assertItemsEqual(
+            ['extra', 'instance_info', 'links', 'supported_power_states'],
+            data)
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     def test_get_collection_custom_fields(self):
         fields = 'uuid,instance_info'
         for i in range(3):
@@ -182,7 +204,9 @@ class TestListNodes(test_api_base.BaseApiTest):
         self.assertEqual(3, len(data['nodes']))
         for node in data['nodes']:
             # We always append "links"
-            self.assertItemsEqual(['uuid', 'instance_info', 'links'], node)
+            self.assertItemsEqual(
+                ['uuid', 'instance_info', 'links', 'supported_power_states'],
+                node)
 
     def test_get_custom_fields_invalid_fields(self):
         node = obj_utils.create_test_node(self.context,
@@ -206,6 +230,8 @@ class TestListNodes(test_api_base.BaseApiTest):
             expect_errors=True)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_int)
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     def test_get_one_custom_fields_show_password(self):
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id,
@@ -215,7 +241,8 @@ class TestListNodes(test_api_base.BaseApiTest):
             '/nodes/%s?fields=%s' % (node.uuid, fields),
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         # We always append "links"
-        self.assertItemsEqual(['driver_info', 'links'], data)
+        self.assertItemsEqual(
+            ['driver_info', 'links', 'supported_power_states'], data)
         self.assertEqual('******', data['driver_info']['fake_password'])
 
     def test_get_network_interface_fields_invalid_api_version(self):
@@ -228,6 +255,8 @@ class TestListNodes(test_api_base.BaseApiTest):
             expect_errors=True)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_int)
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     def test_get_network_interface_fields(self):
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id)
@@ -237,7 +266,13 @@ class TestListNodes(test_api_base.BaseApiTest):
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         self.assertIn('network_interface', response)
 
-    def test_detail(self):
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states')
+    def test_detail(self, mock_get_supported_power_states):
+        expected_supported_power_states = [
+            "power on", "power off", "rebooting"]
+        mock_get_supported_power_states.return_value = (
+            expected_supported_power_states)
+
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id)
         data = self.get_json(
@@ -263,6 +298,8 @@ class TestListNodes(test_api_base.BaseApiTest):
         self.assertIn('network_interface', data['nodes'][0])
         # never expose the chassis_id
         self.assertNotIn('chassis_id', data['nodes'][0])
+        self.assertEqual(expected_supported_power_states,
+                         data['nodes'][0]['supported_power_states'])
 
     def test_detail_against_single(self):
         node = obj_utils.create_test_node(self.context)
@@ -1652,6 +1689,8 @@ class TestPatch(test_api_base.BaseApiTest):
             self.assertEqual('application/json', response.content_type)
             self.assertEqual(http_client.OK, response.status_code)
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     def test_update_network_interface(self):
         node = obj_utils.create_test_node(self.context,
                                           uuid=uuidutils.generate_uuid())
@@ -2121,6 +2160,8 @@ class TestPost(test_api_base.BaseApiTest):
         # Assert RPC method wasn't called this time
         self.assertFalse(get_methods_mock.called)
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     def test_create_node_network_interface(self):
         ndict = test_api_utils.post_get_test_node(
             network_interface='flat')
@@ -2149,6 +2190,8 @@ class TestPost(test_api_base.BaseApiTest):
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.BAD_REQUEST, response.status_int)
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     def test_create_node_resource_class(self):
         ndict = test_api_utils.post_get_test_node(
             resource_class='foo')

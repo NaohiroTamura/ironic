@@ -204,6 +204,18 @@ class ConductorAPI(object):
         return cctxt.call(context, 'change_node_power_state', node_id=node_id,
                           new_state=new_state, timeout=timeout)
 
+    def get_supported_power_states(self, context, node_id, topic=None):
+        """Get a list of the supported power states.
+
+        :param context: request context.
+        :param node_id: node id or uuid.
+        :returns: A list with the supported power states defined
+                  in :mod:`ironic.common.states`.
+        """
+        cctxt = self.client.prepare(topic=topic or self.topic, version='1.35')
+        return cctxt.call(context, 'get_supported_power_states',
+                          node_id=node_id)
+
     def vendor_passthru(self, context, node_id, driver_method, http_method,
                         info, topic=None):
         """Receive requests for vendor-specific actions.

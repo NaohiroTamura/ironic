@@ -3455,6 +3455,14 @@ class UpdatePortTestCase(mgr_utils.ServiceSetUpMixin,
         self.assertEqual(exception.UnsupportedDriverExtension,
                          exc.exc_info[0])
 
+    def test_get_supported_power_states(self):
+        node = obj_utils.create_test_node(self.context, driver='fake')
+        power_states = self.service.get_supported_power_states(
+            self.context, node.uuid)
+
+        self.assertEqual(['power on', 'power off', 'rebooting'],
+                         power_states)
+
 
 @mgr_utils.mock_record_keepalive
 @mock.patch.object(n_flat.FlatNetwork, 'validate', autospec=True)
