@@ -462,7 +462,7 @@ class NodeStatesController(rest.RestController):
         # DB. Ironic counts with a periodic task that verify the current
         # power states of the nodes and update the DB accordingly.
         rpc_node = api_utils.get_rpc_node(node_ident)
-        # NOTE(naohirot): As an excepttion, 'supported_power_states' doesn't
+        # NOTE(naohirot): As an exception, 'supported_power_states' doesn't
         # come from the DB.
         if api_utils.allow_soft_power_off():
             rpc_node.supported_power_states = (
@@ -971,7 +971,7 @@ class Node(base.APIBase):
             if node.instance_info.get('image_url'):
                 node.instance_info['image_url'] = "******"
 
-        # NOTE(naohirot): As an excepttion, 'supported_power_states' doesn't
+        # NOTE(naohirot): As an exception, 'supported_power_states' doesn't
         # come from the DB.
         if api_utils.allow_soft_power_off():
             node.supported_power_states = _get_supported_power_states(rpc_node)
