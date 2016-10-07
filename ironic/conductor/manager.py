@@ -242,7 +242,6 @@ class ConductorManager(base_manager.BaseConductorManager):
                              task, new_state, timeout=power_timeout)
 
     @METRICS.timer('ConductorManager.get_supported_power_states')
-    @messaging.expected_exceptions(exception.NodeLocked)
     def get_supported_power_states(self, context, node_id):
         """RPC method to encapsulate getting node's supported power states.
 
