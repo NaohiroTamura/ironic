@@ -157,8 +157,8 @@ def node_power_action(task, new_state, timeout=None):
     # take power action
     try:
         if new_state != states.REBOOT:
-            sig = reflection.get_signature(task.driver.power.set_power_state)
-            if 'timeout' in sig.parameters:
+            if ('timeout' in reflection.get_signature(
+                    task.driver.power.set_power_state).parameters):
                 task.driver.power.set_power_state(task, new_state,
                                                   timeout=timeout)
             else:
@@ -167,7 +167,14 @@ def node_power_action(task, new_state, timeout=None):
                           {'driver_name': node.driver})
                 task.driver.power.set_power_state(task, new_state)
         else:
-            task.driver.power.reboot(task)
+            if ('timeout' in reflection.get_signature(
+                    task.driver.power.reboot).parameters):
+                task.driver.power.reboot(task, timeout=timeout)
+            else:
+                LOG.error(_LE("The reboot method of %s(driver_name)s "
+                              "doesn't support 'timeout' parameter."),
+                          {'driver_name': node.driver})
+                task.driver.power.reboot(task)
     except Exception as e:
         with excutils.save_and_reraise_exception():
             node['target_power_state'] = states.NOSTATE

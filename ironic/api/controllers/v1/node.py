@@ -439,7 +439,8 @@ class NodeStatesController(rest.RestController):
             raise
 
     @METRICS.timer('NodeStatesController.power')
-    @expose.expose(None, types.uuid_or_name, wtypes.text, int,
+    @expose.expose(None, types.uuid_or_name, wtypes.text,
+                   wtypes.IntegerType(minimum=1),
                    status_code=http_client.ACCEPTED)
     def power(self, node_ident, target, timeout=None):
         """Set the power state of the node.
@@ -453,7 +454,7 @@ class NodeStatesController(rest.RestController):
         :raises: InvalidStateRequested (HTTP 400) if the requested target
                  state is not valid or if the node is in CLEANING state.
         :raises: NotAcceptable for soft reboot, soft power off or timeout,
-          if requested version of the API is less than 1.21.
+          if requested version of the API is less than 1.23.
 
         """
         cdict = pecan.request.context.to_policy_values()
