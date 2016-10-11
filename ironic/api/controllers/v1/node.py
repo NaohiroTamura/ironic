@@ -111,9 +111,13 @@ ALLOWED_TARGET_POWER_STATES = (ir_states.POWER_ON,
 
 def _get_supported_power_states(rpc_node):
     """"Get a list of the supported power states"""
-    topic = pecan.request.rpcapi.get_topic_for(rpc_node)
-    return pecan.request.rpcapi.get_supported_power_states(
-        pecan.request.context, rpc_node.uuid, topic)
+    supported_power_states = None
+    if api_utils.allow_soft_power_off():
+        topic = pecan.request.rpcapi.get_topic_for(rpc_node)
+        supported_power_states = (
+            pecan.request.rpcapi.get_supported_power_states(
+                pecan.request.context, rpc_node.uuid, topic))
+    return supported_power_states
 
 
 def get_nodes_controller_reserved_names():
@@ -408,14 +412,15 @@ class NodeStates(base.APIBase):
     """A list of the supported power states of the node"""
 
     @staticmethod
-    def convert(rpc_node):
+    def convert(rpc_node, supported_power_states=None):
         attr_list = ['console_enabled', 'last_error', 'power_state',
                      'provision_state', 'target_power_state',
                      'target_provision_state', 'provision_updated_at']
         if api_utils.allow_raid_config():
             attr_list.extend(['raid_config', 'target_raid_config'])
-        if api_utils.allow_soft_power_off():
+        if supported_power_states is not None:
             attr_list.extend(['supported_power_states'])
+            rpc_node.supported_power_states = supported_power_states
         states = NodeStates()
         for attr in attr_list:
             setattr(states, attr, getattr(rpc_node, attr))
@@ -433,7 +438,8 @@ class NodeStates(base.APIBase):
                      provision_state=None,
                      raid_config=None,
                      target_raid_config=None,
-                     supported_power_states=[])
+                     supported_power_states=[
+                         "power on", "power off", "rebooting"])
         return sample
 
 
@@ -464,11 +470,10 @@ class NodeStatesController(rest.RestController):
         rpc_node = api_utils.get_rpc_node(node_ident)
         # NOTE(naohirot): As an exception, 'supported_power_states' doesn't
         # come from the DB.
-        if api_utils.allow_soft_power_off():
-            rpc_node.supported_power_states = (
-                _get_supported_power_states(rpc_node))
+        supported_power_states = _get_supported_power_states(rpc_node)
 
-        return NodeStates.convert(rpc_node)
+        return NodeStates.convert(
+            rpc_node, supported_power_states=supported_power_states)
 
     @METRICS.timer('NodeStatesController.raid')
     @expose.expose(None, types.uuid_or_name, body=types.jsontype)
@@ -894,7 +899,8 @@ class Node(base.APIBase):
 
     @staticmethod
     def _convert_with_links(node, url, fields=None, show_states_links=True,
-                            show_portgroups=True):
+                            show_portgroups=True,
+                            supported_power_states=None):
         # NOTE(lucasagomes): Since we are able to return a specified set of
         # fields the "uuid" can be unset, so we need to save it in another
         # variable to use when building the links
@@ -931,6 +937,8 @@ class Node(base.APIBase):
                       link.Link.make_link('bookmark', url, 'nodes',
                                           node_uuid, bookmark=True)
                       ]
+        if supported_power_states is not None:
+            node.supported_power_states = supported_power_states
         return node
 
     @classmethod
@@ -973,18 +981,19 @@ class Node(base.APIBase):
 
         # NOTE(naohirot): As an exception, 'supported_power_states' doesn't
         # come from the DB.
-        if api_utils.allow_soft_power_off():
-            node.supported_power_states = _get_supported_power_states(rpc_node)
+        supported_power_states = _get_supported_power_states(rpc_node)
 
         update_state_in_older_versions(node)
         hide_fields_in_newer_versions(node)
         show_states_links = (
             api_utils.allow_links_node_states_and_driver_properties())
         show_portgroups = api_utils.allow_portgroups_subcontrollers()
-        return cls._convert_with_links(node, pecan.request.public_url,
-                                       fields=fields,
-                                       show_states_links=show_states_links,
-                                       show_portgroups=show_portgroups)
+        return cls._convert_with_links(
+            node, pecan.request.public_url,
+            fields=fields,
+            show_states_links=show_states_links,
+            show_portgroups=show_portgroups,
+            supported_power_states=supported_power_states)
 
     @classmethod
     def sample(cls, expand=True):
