@@ -1612,12 +1612,31 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
         mock_on.return_value = states.POWER_ON
         manager.attach_mock(mock_off, 'power_off')
         manager.attach_mock(mock_on, 'power_on')
-        expected = [mock.call.power_off(self.info),
-                    mock.call.power_on(self.info)]
+        expected = [mock.call.power_off(self.info, timeout=None),
+                    mock.call.power_on(self.info, timeout=None)]
 
         with task_manager.acquire(self.context,
                                   self.node.uuid) as task:
             self.driver.power.reboot(task)
+            mock_next_boot.assert_called_once_with(task, self.info)
+
+        self.assertEqual(manager.mock_calls, expected)
+
+    @mock.patch.object(driver_utils, 'ensure_next_boot_device', autospec=True)
+    @mock.patch.object(ipmi, '_power_off', spec_set=types.FunctionType)
+    @mock.patch.object(ipmi, '_power_on', spec_set=types.FunctionType)
+    def test_reboot_timeout_ok(self, mock_on, mock_off, mock_next_boot):
+        manager = mock.MagicMock()
+        # NOTE(rloo): if autospec is True, then manager.mock_calls is empty
+        mock_on.return_value = states.POWER_ON
+        manager.attach_mock(mock_off, 'power_off')
+        manager.attach_mock(mock_on, 'power_on')
+        expected = [mock.call.power_off(self.info, timeout=2),
+                    mock.call.power_on(self.info, timeout=2)]
+
+        with task_manager.acquire(self.context,
+                                  self.node.uuid) as task:
+            self.driver.power.reboot(task, timeout=2)
             mock_next_boot.assert_called_once_with(task, self.info)
 
         self.assertEqual(manager.mock_calls, expected)
@@ -1649,14 +1668,33 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
         mock_on.return_value = states.ERROR
         manager.attach_mock(mock_off, 'power_off')
         manager.attach_mock(mock_on, 'power_on')
-        expected = [mock.call.power_off(self.info),
-                    mock.call.power_on(self.info)]
+        expected = [mock.call.power_off(self.info, timeout=None),
+                    mock.call.power_on(self.info, timeout=None)]
 
         with task_manager.acquire(self.context,
                                   self.node.uuid) as task:
             self.assertRaises(exception.PowerStateFailure,
                               self.driver.power.reboot,
                               task)
+
+        self.assertEqual(manager.mock_calls, expected)
+
+    @mock.patch.object(ipmi, '_power_off', spec_set=types.FunctionType)
+    @mock.patch.object(ipmi, '_power_on', spec_set=types.FunctionType)
+    def test_reboot_timeout_fail(self, mock_on, mock_off):
+        manager = mock.MagicMock()
+        # NOTE(rloo): if autospec is True, then manager.mock_calls is empty
+        mock_on.return_value = states.ERROR
+        manager.attach_mock(mock_off, 'power_off')
+        manager.attach_mock(mock_on, 'power_on')
+        expected = [mock.call.power_off(self.info, timeout=2),
+                    mock.call.power_on(self.info, timeout=2)]
+
+        with task_manager.acquire(self.context,
+                                  self.node.uuid) as task:
+            self.assertRaises(exception.PowerStateFailure,
+                              self.driver.power.reboot,
+                              task, timeout=2)
 
         self.assertEqual(manager.mock_calls, expected)
 

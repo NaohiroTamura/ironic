@@ -861,10 +861,12 @@ class IPMIPower(base.PowerInterface):
 
     @METRICS.timer('IPMIPower.reboot')
     @task_manager.require_exclusive_lock
-    def reboot(self, task):
+    def reboot(self, task, timeout=None):
         """Cycles the power to the task's node.
 
         :param task: a TaskManager instance containing the node to act on.
+        :param timeout: timeout positive integer (> 0) for any power state.
+          ``None`` indicates to use default timeout.
         :raises: MissingParameterValue if required ipmi parameters are missing.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: PowerStateFailure if the final state of the node is not
@@ -876,7 +878,7 @@ class IPMIPower(base.PowerInterface):
         if intermediate_state != states.POWER_OFF:
             raise exception.PowerStateFailure(pstate=states.POWER_OFF)
         driver_utils.ensure_next_boot_device(task, driver_info)
-        state = _power_on(driver_info)
+        state = _power_on(driver_info, timeout=timeout)
 
         if state != states.POWER_ON:
             raise exception.PowerStateFailure(pstate=states.POWER_ON)
