@@ -248,18 +248,20 @@ class IRMCPower(base.PowerInterface):
 
     @METRICS.timer('IRMCPower.reboot')
     @task_manager.require_exclusive_lock
-    def reboot(self, task):
+    def reboot(self, task, timeout=None):
         """Perform a hard reboot of the task's node.
 
         :param task: a TaskManager instance containing the node to act on.
+        :param timeout: timeout positive integer (> 0) for any power state.
+          ``None`` indicates to use default timeout.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: IRMCOperationError if failed to set the power state.
         """
         current_pstate = self.get_power_state(task)
         if current_pstate == states.POWER_ON:
-            _set_power_state(task, states.REBOOT)
+            _set_power_state(task, states.REBOOT, timeout=timeout)
         elif current_pstate == states.POWER_OFF:
-            _set_power_state(task, states.POWER_ON)
+            _set_power_state(task, states.POWER_ON, timeout=timeout)
 
     def get_supported_power_states(self, task):
         """Get a list of the supported power states.

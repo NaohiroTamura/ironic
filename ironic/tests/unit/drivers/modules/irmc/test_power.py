@@ -321,6 +321,17 @@ class IRMCPowerTestCase(db_base.DbTestCase):
 
     @mock.patch.object(irmc_power, '_set_power_state', spec_set=True,
                        autospec=True)
+    def test_set_power_state_timeout(self, mock_set_power):
+        mock_set_power.return_value = states.POWER_ON
+        with task_manager.acquire(self.context, self.node.uuid,
+                                  shared=False) as task:
+            task.driver.power.set_power_state(task, states.POWER_ON,
+                                              timeout=2)
+        mock_set_power.assert_called_once_with(task, states.POWER_ON,
+                                               timeout=2)
+
+    @mock.patch.object(irmc_power, '_set_power_state', spec_set=True,
+                       autospec=True)
     @mock.patch.object(irmc_power.IRMCPower, 'get_power_state', spec_set=True,
                        autospec=True)
     def test_reboot_reboot(self, mock_get_power, mock_set_power):
@@ -330,7 +341,22 @@ class IRMCPowerTestCase(db_base.DbTestCase):
             task.driver.power.reboot(task)
             mock_get_power.assert_called_once_with(
                 task.driver.power, task)
-        mock_set_power.assert_called_once_with(task, states.REBOOT)
+        mock_set_power.assert_called_once_with(task, states.REBOOT,
+                                               timeout=None)
+
+    @mock.patch.object(irmc_power, '_set_power_state', spec_set=True,
+                       autospec=True)
+    @mock.patch.object(irmc_power.IRMCPower, 'get_power_state', spec_set=True,
+                       autospec=True)
+    def test_reboot_reboot_timeout(self, mock_get_power, mock_set_power):
+        with task_manager.acquire(self.context, self.node.uuid,
+                                  shared=False) as task:
+            mock_get_power.return_value = states.POWER_ON
+            task.driver.power.reboot(task, timeout=2)
+            mock_get_power.assert_called_once_with(
+                task.driver.power, task)
+        mock_set_power.assert_called_once_with(task, states.REBOOT,
+                                               timeout=2)
 
     @mock.patch.object(irmc_power, '_set_power_state', spec_set=True,
                        autospec=True)
@@ -343,4 +369,19 @@ class IRMCPowerTestCase(db_base.DbTestCase):
             task.driver.power.reboot(task)
             mock_get_power.assert_called_once_with(
                 task.driver.power, task)
-        mock_set_power.assert_called_once_with(task, states.POWER_ON)
+        mock_set_power.assert_called_once_with(task, states.POWER_ON,
+                                               timeout=None)
+
+    @mock.patch.object(irmc_power, '_set_power_state', spec_set=True,
+                       autospec=True)
+    @mock.patch.object(irmc_power.IRMCPower, 'get_power_state', spec_set=True,
+                       autospec=True)
+    def test_reboot_power_on_timeout(self, mock_get_power, mock_set_power):
+        with task_manager.acquire(self.context, self.node.uuid,
+                                  shared=False) as task:
+            mock_get_power.return_value = states.POWER_OFF
+            task.driver.power.reboot(task, timeout=2)
+            mock_get_power.assert_called_once_with(
+                task.driver.power, task)
+        mock_set_power.assert_called_once_with(task, states.POWER_ON,
+                                               timeout=2)
