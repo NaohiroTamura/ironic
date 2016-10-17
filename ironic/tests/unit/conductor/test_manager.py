@@ -85,6 +85,36 @@ class ChangeNodePowerStateTestCase(mgr_utils.ServiceSetUpMixin,
             # background task's link callback.
             self.assertIsNone(node.reservation)
 
+    def test_change_node_power_state_soft_power_off_timeout(self):
+        # Test change_node_power_state with timeout optional parameter
+        # including integration with conductor.utils.node_power_action and
+        # lower.
+        mgr_utils.mock_the_extension_manager(driver="fake_soft_power")
+        self.driver = driver_factory.get_driver("fake_soft_power")
+        node = obj_utils.create_test_node(self.context,
+                                          driver='fake_soft_power',
+                                          power_state=states.POWER_ON)
+        self._start_service()
+
+        with mock.patch.object(self.driver.power,
+                               'get_power_state') as get_power_mock:
+            get_power_mock.return_value = states.POWER_ON
+
+            self.service.change_node_power_state(self.context,
+                                                 node.uuid,
+                                                 states.SOFT_POWER_OFF,
+                                                 timeout=2)
+            self._stop_service()
+
+            get_power_mock.assert_called_once_with(mock.ANY)
+            node.refresh()
+            self.assertEqual(states.POWER_OFF, node.power_state)
+            self.assertIsNone(node.target_power_state)
+            self.assertIsNone(node.last_error)
+            # Verify the reservation has been cleared by
+            # background task's link callback.
+            self.assertIsNone(node.reservation)
+
     @mock.patch.object(conductor_utils, 'node_power_action')
     def test_change_node_power_state_node_already_locked(self,
                                                          pwr_act_mock):

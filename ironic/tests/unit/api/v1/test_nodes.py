@@ -2361,6 +2361,23 @@ class TestPut(test_api_base.BaseApiTest):
         self.assertEqual(urlparse.urlparse(response.location).path,
                          expected_location)
 
+    def test_power_state_timeout(self):
+        response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
+                                 {'target': states.POWER_ON, 'timeout': 2},
+                                 headers={api_base.Version.string: "1.23"})
+        self.assertEqual(http_client.ACCEPTED, response.status_code)
+        self.assertEqual(b'', response.body)
+        self.mock_cnps.assert_called_once_with(mock.ANY,
+                                               self.node.uuid,
+                                               states.POWER_ON,
+                                               timeout=2,
+                                               topic='test-topic')
+        # Check location header
+        self.assertIsNotNone(response.location)
+        expected_location = '/v1/nodes/%s/states' % self.node.uuid
+        self.assertEqual(urlparse.urlparse(response.location).path,
+                         expected_location)
+
     def test_power_state_by_name_unsupported(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.name,
                                  {'target': states.POWER_ON},
