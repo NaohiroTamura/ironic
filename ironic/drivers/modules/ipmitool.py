@@ -847,7 +847,11 @@ class IPMIPower(base.PowerInterface):
             target_state = states.POWER_OFF
             state = _soft_power_off(driver_info, timeout=timeout)
         elif new_state == states.SOFT_REBOOT:
-            _soft_power_off(driver_info, timeout=timeout)
+            intermediate_state = _soft_power_off(driver_info, timeout=timeout)
+            intermediate_target_state = states.POWER_OFF
+            if intermediate_state != intermediate_target_state:
+                raise exception.PowerStateFailure(
+                    pstate=intermediate_target_state)
             driver_utils.ensure_next_boot_device(task, driver_info)
             target_state = states.POWER_ON
             state = _power_on(driver_info, timeout=timeout)
@@ -874,7 +878,7 @@ class IPMIPower(base.PowerInterface):
 
         """
         driver_info = _parse_driver_info(task.node)
-        intermediate_state = _power_off(driver_info)
+        intermediate_state = _power_off(driver_info, timeout=timeout)
         if intermediate_state != states.POWER_OFF:
             raise exception.PowerStateFailure(pstate=states.POWER_OFF)
         driver_utils.ensure_next_boot_device(task, driver_info)
