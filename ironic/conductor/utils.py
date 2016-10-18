@@ -128,9 +128,9 @@ def node_power_action(task, new_state, timeout=None):
                 "Error: %(error)s") % {'target': new_state, 'error': e}
             node['target_power_state'] = states.NOSTATE
             node.save()
-                notify_utils.emit_power_set_notification(
-                    task, fields.NotificationLevel.ERROR,
-                    fields.NotificationStatus.ERROR, new_state)
+            notify_utils.emit_power_set_notification(
+                task, fields.NotificationLevel.ERROR,
+                fields.NotificationStatus.ERROR, new_state)
 
     if curr_state == states.POWER_ON:
         if new_state == states.POWER_ON:

@@ -468,6 +468,11 @@ class NodeStatesController(rest.RestController):
         if ((target in [ir_states.SOFT_REBOOT, ir_states.SOFT_POWER_OFF] or
              timeout) and not api_utils.allow_soft_power_off()):
             raise exception.NotAcceptable()
+        # Note(naohirot): This check is workaround because
+        #                 wtypes.IntegerType(minimum=1) is not effective
+        if timeout is not None and timeout < 1:
+            raise exception.NotAcceptable(
+                _("timeout has to be positive integer"))
 
         if target not in ALLOWED_TARGET_POWER_STATES:
             raise exception.InvalidStateRequested(

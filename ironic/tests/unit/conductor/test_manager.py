@@ -373,7 +373,8 @@ class ChangeNodePowerStateTestCase(mgr_utils.ServiceSetUpMixin,
                               states.POWER_ON)
 
             spawn_mock.assert_called_once_with(
-                conductor_utils.node_power_action, mock.ANY, states.POWER_ON)
+                conductor_utils.node_power_action, mock.ANY, states.POWER_ON,
+                timeout=None)
             self.assertFalse(mock_notif.called)
 
     @mock.patch('ironic.objects.node.NodeSetPowerStateNotification')
