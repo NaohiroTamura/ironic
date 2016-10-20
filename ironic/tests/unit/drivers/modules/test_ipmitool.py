@@ -1651,6 +1651,7 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
     def test_reboot_timeout_ok(self, mock_on, mock_off, mock_next_boot):
         manager = mock.MagicMock()
         # NOTE(rloo): if autospec is True, then manager.mock_calls is empty
+        mock_off.return_value = states.POWER_OFF
         mock_on.return_value = states.POWER_ON
         manager.attach_mock(mock_off, 'power_off')
         manager.attach_mock(mock_on, 'power_on')
@@ -1672,7 +1673,7 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
         mock_off.return_value = states.ERROR
         manager.attach_mock(mock_off, 'power_off')
         manager.attach_mock(mock_on, 'power_on')
-        expected = [mock.call.power_off(self.info)]
+        expected = [mock.call.power_off(self.info, timeout=None)]
 
         with task_manager.acquire(self.context,
                                   self.node.uuid) as task:
@@ -1707,6 +1708,7 @@ class IPMIToolDriverTestCase(db_base.DbTestCase):
     def test_reboot_timeout_fail(self, mock_on, mock_off):
         manager = mock.MagicMock()
         # NOTE(rloo): if autospec is True, then manager.mock_calls is empty
+        mock_off.return_value = states.POWER_OFF
         mock_on.return_value = states.ERROR
         manager.attach_mock(mock_off, 'power_off')
         manager.attach_mock(mock_on, 'power_on')
