@@ -2455,73 +2455,59 @@ class TestPut(test_api_base.BaseApiTest):
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
         self.assertTrue(response.json['error_message'])
 
-    def test_power_state_power_off_no_timeout_no_ver(self):
+    def test_power_state_soft_power_off_no_timeout_no_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
-                                 {'target': states.POWER_OFF})
-        self.assertEqual(http_client.ACCEPTED, response.status_code)
-        self.assertEqual(b'', response.body)
-        self.mock_cnps.assert_called_once_with(mock.ANY,
-                                               self.node.uuid,
-                                               states.POWER_OFF,
-                                               timeout=None,
-                                               topic='test-topic')
-        # Check location header
-        self.assertIsNotNone(response.location)
-        expected_location = '/v1/nodes/%s/states' % self.node.uuid
-        self.assertEqual(urlparse.urlparse(response.location).path,
-                         expected_location)
-
-    def test_power_state_power_off_no_timeout_valid_soft_ver(self):
-        response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
-                                 {'target': states.POWER_OFF},
-                                 headers={api_base.Version.string: "1.23"})
-        self.assertEqual(http_client.ACCEPTED, response.status_code)
-        self.assertEqual(b'', response.body)
-        self.mock_cnps.assert_called_once_with(mock.ANY,
-                                               self.node.uuid,
-                                               states.POWER_OFF,
-                                               timeout=None,
-                                               topic='test-topic')
-        # Check location header
-        self.assertIsNotNone(response.location)
-        expected_location = '/v1/nodes/%s/states' % self.node.uuid
-        self.assertEqual(urlparse.urlparse(response.location).path,
-                         expected_location)
-
-    def test_power_state_power_off_no_timeout_invalid_soft_ver(self):
-        response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
-                                 {'target': states.POWER_OFF},
-                                 headers={api_base.Version.string: "1.22"})
-        self.assertEqual(http_client.ACCEPTED, response.status_code)
-        self.assertEqual(b'', response.body)
-        self.mock_cnps.assert_called_once_with(mock.ANY,
-                                               self.node.uuid,
-                                               states.POWER_OFF,
-                                               timeout=None,
-                                               topic='test-topic')
-        # Check location header
-        self.assertIsNotNone(response.location)
-        expected_location = '/v1/nodes/%s/states' % self.node.uuid
-        self.assertEqual(urlparse.urlparse(response.location).path,
-                         expected_location)
-
-    def test_power_state_power_off_valid_timeout_no_ver(self):
-        response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
-                                 {'target': states.POWER_OFF, 'timeout': 2},
+                                 {'target': states.SOFT_POWER_OFF},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
         self.assertTrue(response.json['error_message'])
 
-    def test_power_state_power_off_valid_timeout_valid_soft_ver(self):
+    def test_power_state_soft_power_off_no_timeout_valid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
-                                 {'target': states.POWER_OFF, 'timeout': 2},
+                                 {'target': states.SOFT_POWER_OFF},
                                  headers={api_base.Version.string: "1.23"})
         self.assertEqual(http_client.ACCEPTED, response.status_code)
         self.assertEqual(b'', response.body)
         self.mock_cnps.assert_called_once_with(mock.ANY,
                                                self.node.uuid,
-                                               states.POWER_OFF,
+                                               states.SOFT_POWER_OFF,
+                                               timeout=None,
+                                               topic='test-topic')
+        # Check location header
+        self.assertIsNotNone(response.location)
+        expected_location = '/v1/nodes/%s/states' % self.node.uuid
+        self.assertEqual(urlparse.urlparse(response.location).path,
+                         expected_location)
+
+    def test_power_state_soft_power_off_no_timeout_invalid_soft_ver(self):
+        response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
+                                 {'target': states.SOFT_POWER_OFF},
+                                 headers={api_base.Version.string: "1.22"},
+                                 expect_errors=True)
+        self.assertEqual('application/json', response.content_type)
+        self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
+        self.assertTrue(response.json['error_message'])
+
+    def test_power_state_soft_power_off_valid_timeout_no_ver(self):
+        response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
+                                 {'target': states.SOFT_POWER_OFF,
+                                  'timeout': 2},
+                                 expect_errors=True)
+        self.assertEqual('application/json', response.content_type)
+        self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
+        self.assertTrue(response.json['error_message'])
+
+    def test_power_state_soft_power_off_valid_timeout_valid_soft_ver(self):
+        response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
+                                 {'target': states.SOFT_POWER_OFF,
+                                  'timeout': 2},
+                                 headers={api_base.Version.string: "1.23"})
+        self.assertEqual(http_client.ACCEPTED, response.status_code)
+        self.assertEqual(b'', response.body)
+        self.mock_cnps.assert_called_once_with(mock.ANY,
+                                               self.node.uuid,
+                                               states.SOFT_POWER_OFF,
                                                timeout=2,
                                                topic='test-topic')
         # Check location header
@@ -2530,35 +2516,39 @@ class TestPut(test_api_base.BaseApiTest):
         self.assertEqual(urlparse.urlparse(response.location).path,
                          expected_location)
 
-    def test_power_state_power_off_valid_timeout_invalid_soft_ver(self):
+    def test_power_state_soft_power_off_valid_timeout_invalid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
-                                 {'target': states.POWER_OFF, 'timeout': 2},
+                                 {'target': states.SOFT_POWER_OFF,
+                                  'timeout': 2},
                                  headers={api_base.Version.string: "1.22"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
         self.assertTrue(response.json['error_message'])
 
-    def test_power_state_power_off_invalid_timeout_no_ver(self):
+    def test_power_state_soft_power_off_invalid_timeout_no_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
-                                 {'target': states.POWER_OFF, 'timeout': 0},
+                                 {'target': states.SOFT_POWER_OFF,
+                                  'timeout': 0},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
         self.assertTrue(response.json['error_message'])
 
-    def test_power_state_power_off_invalid_timeout_valid_soft_ver(self):
+    def test_power_state_soft_power_off_invalid_timeout_valid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
-                                 {'target': states.POWER_OFF, 'timeout': 0},
+                                 {'target': states.SOFT_POWER_OFF,
+                                  'timeout': 0},
                                  headers={api_base.Version.string: "1.23"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
         self.assertTrue(response.json['error_message'])
 
-    def test_power_state_power_off_invalid_timeout_invalid_soft_ver(self):
+    def test_power_state_soft_power_off_invalid_timeout_invalid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
-                                 {'target': states.POWER_OFF, 'timeout': 0},
+                                 {'target': states.SOFT_POWER_OFF,
+                                  'timeout': 0},
                                  headers={api_base.Version.string: "1.22"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
