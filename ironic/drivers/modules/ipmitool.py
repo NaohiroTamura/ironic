@@ -821,7 +821,7 @@ class IPMIPower(base.PowerInterface):
     @METRICS.timer('IPMIPower.set_power_state')
     @task_manager.require_exclusive_lock
     def set_power_state(self, task, new_state, timeout=None):
-        """Turn the power on, off, or soft off.
+        """Turn the power on, off, soft reboot, or soft power off.
 
         :param task: a TaskManager instance containing the node to act on.
         :param new_state: desired power state.
@@ -851,7 +851,8 @@ class IPMIPower(base.PowerInterface):
             intermediate_target_state = states.POWER_OFF
             if intermediate_state != intermediate_target_state:
                 raise exception.PowerStateFailure(
-                    pstate=intermediate_target_state)
+                    pstate=(intermediate_target_state + ' in the middle of ' +
+                            new_state))
             driver_utils.ensure_next_boot_device(task, driver_info)
             target_state = states.POWER_ON
             state = _power_on(driver_info, timeout=timeout)
@@ -880,7 +881,9 @@ class IPMIPower(base.PowerInterface):
         driver_info = _parse_driver_info(task.node)
         intermediate_state = _power_off(driver_info, timeout=timeout)
         if intermediate_state != states.POWER_OFF:
-            raise exception.PowerStateFailure(pstate=states.POWER_OFF)
+            raise exception.PowerStateFailure(
+                pstate=(states.POWER_OFF + ' in the middle of ' +
+                        states.REBOOT))
         driver_utils.ensure_next_boot_device(task, driver_info)
         state = _power_on(driver_info, timeout=timeout)
 
