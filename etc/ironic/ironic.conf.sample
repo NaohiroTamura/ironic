@@ -1831,7 +1831,7 @@
 # SNMP security name. Required for version "v3" (string value)
 #snmp_security = <None>
 
-# SNMP polling interval in second (integer value)
+# SNMP polling interval in seconds (integer value)
 #snmp_polling_interval = 10
 
 
