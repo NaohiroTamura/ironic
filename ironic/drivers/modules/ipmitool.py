@@ -484,8 +484,8 @@ def _set_and_wait(new_state, driver_info, timeout=None):
     method.
 
     :param new_state: desired power state
-    :param timeout: timeout positive integer (> 0) for any power state.
-      ``None`` indicates to use default timeout.
+    :param timeout: timeout (in seconds) positive integer (> 0) for any
+      power state. ``None`` indicates to use default timeout.
     :param driver_info: the ipmitool parameters for accessing a node.
     :returns: one of ironic.common.states
 
@@ -548,8 +548,8 @@ def _power_on(driver_info, timeout=None):
     """Turn the power ON for this node.
 
     :param driver_info: the ipmitool parameters for accessing a node.
-    :param timeout: timeout positive integer (> 0) for any power state.
-      ``None`` indicates to use default timeout.
+    :param timeout: timeout (in seconds) positive integer (> 0) for any
+      power state. ``None`` indicates to use default timeout.
     :returns: one of ironic.common.states POWER_ON or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
@@ -561,8 +561,8 @@ def _power_off(driver_info, timeout=None):
     """Turn the power OFF for this node.
 
     :param driver_info: the ipmitool parameters for accessing a node.
-    :param timeout: timeout positive integer (> 0) for any power state.
-      ``None`` indicates to use default timeout.
+    :param timeout: timeout (in seconds) positive integer (> 0) for any
+      power state. ``None`` indicates to use default timeout.
     :returns: one of ironic.common.states POWER_OFF or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
@@ -574,8 +574,8 @@ def _soft_power_off(driver_info, timeout=None):
     """Turn the power SOFT OFF for this node.
 
     :param driver_info: the ipmitool parameters for accessing a node.
-    :param timeout: timeout positive integer (> 0) for any power state.
-      ``None`` indicates to use default timeout.
+    :param timeout: timeout (in seconds) positive integer (> 0) for any
+      power state. ``None`` indicates to use default timeout.
     :returns: one of ironic.common.states POWER_OFF or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
@@ -825,10 +825,10 @@ class IPMIPower(base.PowerInterface):
 
         :param task: a TaskManager instance containing the node to act on.
         :param new_state: desired power state.
-            one of ironic.common.states, POWER_ON, POWER_OFF, SOFT_POWER_OFF,
-            or SOFT_REBOOT.
-        :param timeout: timeout positive integer (> 0) for any power state.
-          ``None`` indicates to use default timeout.
+          one of ironic.common.states, POWER_ON, POWER_OFF, SOFT_POWER_OFF,
+          or SOFT_REBOOT.
+        :param timeout: timeout (in seconds) positive integer (> 0) for any
+          power state. ``None`` indicates to use default timeout.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: MissingParameterValue if required ipmi parameters are missing
         :raises: PowerStateFailure if the power couldn't be set to pstate.
@@ -870,12 +870,12 @@ class IPMIPower(base.PowerInterface):
         """Cycles the power to the task's node.
 
         :param task: a TaskManager instance containing the node to act on.
-        :param timeout: timeout positive integer (> 0) for any power state.
-          ``None`` indicates to use default timeout.
+        :param timeout: timeout (in seconds) positive integer (> 0) for any
+          power state. ``None`` indicates to use default timeout.
         :raises: MissingParameterValue if required ipmi parameters are missing.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: PowerStateFailure if the final state of the node is not
-            POWER_ON or the intermediate state of the node is not POWER_OFF.
+          POWER_ON or the intermediate state of the node is not POWER_OFF.
 
         """
         driver_info = _parse_driver_info(task.node)
