@@ -447,8 +447,8 @@ class NodeStatesController(rest.RestController):
 
         :param node_ident: the UUID or logical name of a node.
         :param target: The desired power state of the node.
-        :param timeout: timeout positive integer (> 0) for any power state.
-          ``None`` indicates to use default timeout.
+        :param timeout: timeout (in seconds) positive integer (> 0) for any
+          power state. ``None`` indicates to use default timeout.
         :raises: ClientSideError (HTTP 409) if a power operation is
                  already in progress.
         :raises: InvalidStateRequested (HTTP 400) if the requested target

@@ -190,8 +190,8 @@ class ConductorAPI(object):
         :param context: request context.
         :param node_id: node id or uuid.
         :param new_state: one of ironic.common.states power state values
-        :param timeout: timeout positive integer (> 0) for any power state.
-           ``None`` indicates to use default timeout.
+        :param timeout: timeout (in seconds) positive integer (> 0) for any
+           power state. ``None`` indicates to use default timeout.
         :param topic: RPC topic. Defaults to self.topic.
         :raises: NoFreeConductorWorker when there is no free worker to start
                  async task.

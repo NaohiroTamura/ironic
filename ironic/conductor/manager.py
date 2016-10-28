@@ -192,8 +192,8 @@ class ConductorManager(base_manager.BaseConductorManager):
         :param context: an admin context.
         :param node_id: the id or uuid of a node.
         :param new_state: the desired power state of the node.
-        :param timeout: timeout positive integer (> 0) for any power state.
-          ``None`` indicates to use default timeout.
+        :param timeout: timeout (in seconds) positive integer (> 0) for any
+          power state. ``None`` indicates to use default timeout.
         :raises: NoFreeConductorWorker when there is no free worker to start
                  async task.
         :raises: InvalidParameterValue

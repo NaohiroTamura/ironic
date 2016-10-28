@@ -499,8 +499,8 @@ class PowerInterface(BaseInterface):
 
         :param task: a TaskManager instance containing the node to act on.
         :param power_state: Any power state from :mod:`ironic.common.states`.
-        :param timeout: positive integer (> 0) for any power state.
-          ``None`` indicates to use default timeout.
+        :param timeout: timeout (in seconds) positive integer (> 0) for any
+          power state. ``None`` indicates to use default timeout.
         :raises: MissingParameterValue if a required parameter is missing.
         """
 
@@ -512,8 +512,8 @@ class PowerInterface(BaseInterface):
         by powering it on.
 
         :param task: a TaskManager instance containing the node to act on.
-        :param timeout: positive integer (> 0) for any power state.
-          ``None`` indicates to use default timeout.
+        :param timeout: timeout (in seconds) positive integer (> 0) for any
+          power state. ``None`` indicates to use default timeout.
         :raises: MissingParameterValue if a required parameter is missing.
         """
 

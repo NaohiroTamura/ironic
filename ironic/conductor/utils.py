@@ -75,8 +75,8 @@ def node_power_action(task, new_state, timeout=None):
 
     :param task: a TaskManager instance containing the node to act on.
     :param new_state: Any power state from ironic.common.states.
-    :param timeout: timeout positive integer (> 0) for any power state.
-      ``None`` indicates to use default timeout.
+    :param timeout: timeout (in seconds) positive integer (> 0) for any
+      power state. ``None`` indicates to use default timeout.
     :raises: InvalidParameterValue when the wrong state is specified
              or the wrong driver info is specified.
     :raises: other exceptions by the node's power driver if something
