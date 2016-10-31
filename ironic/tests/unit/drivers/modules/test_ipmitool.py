@@ -1259,6 +1259,26 @@ class IPMIToolPrivateMethodTestCase(db_base.DbTestCase):
 
     @mock.patch.object(ipmi, '_exec_ipmitool', autospec=True)
     @mock.patch('eventlet.greenthread.sleep', autospec=True)
+    def test__soft_power_off(self, sleep_mock, mock_exec,
+                             mock_sleep):
+
+        def side_effect(driver_info, command):
+            resp_dict = {"power status": ["Chassis Power is off\n", None],
+                         "power soft": [None, None]}
+            return resp_dict.get(command, ["Bad\n", None])
+
+        mock_exec.side_effect = side_effect
+
+        expected = [mock.call(self.info, "power soft"),
+                    mock.call(self.info, "power status")]
+
+        state = ipmi._soft_power_off(self.info, timeout=None)
+
+        self.assertEqual(mock_exec.call_args_list, expected)
+        self.assertEqual(states.POWER_OFF, state)
+
+    @mock.patch.object(ipmi, '_exec_ipmitool', autospec=True)
+    @mock.patch('eventlet.greenthread.sleep', autospec=True)
     def test__soft_power_off_max_retries(self, sleep_mock, mock_exec,
                                          mock_sleep):
 
