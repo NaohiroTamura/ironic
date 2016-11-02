@@ -828,7 +828,9 @@ class IPMIPower(base.PowerInterface):
           one of ironic.common.states, POWER_ON, POWER_OFF, SOFT_POWER_OFF,
           or SOFT_REBOOT.
         :param timeout: timeout (in seconds) positive integer (> 0) for any
-          power state. ``None`` indicates to use default timeout.
+          power state. The timeout is counted once during power off and once
+          during power on for reboots. ``None`` indicates that the default
+          timeout will be used.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: MissingParameterValue if required ipmi parameters are missing
         :raises: PowerStateFailure if the power couldn't be set to pstate.
@@ -871,7 +873,9 @@ class IPMIPower(base.PowerInterface):
 
         :param task: a TaskManager instance containing the node to act on.
         :param timeout: timeout (in seconds) positive integer (> 0) for any
-          power state. ``None`` indicates to use default timeout.
+          power state. The timeout is counted once during power off and once
+          during power on for reboots. ``None`` indicates that the default
+          timeout will be used.
         :raises: MissingParameterValue if required ipmi parameters are missing.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: PowerStateFailure if the final state of the node is not
