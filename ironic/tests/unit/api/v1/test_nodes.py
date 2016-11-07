@@ -2364,7 +2364,7 @@ class TestPut(test_api_base.BaseApiTest):
     def test_power_state_power_on_no_timeout_valid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.POWER_ON},
-                                 headers={api_base.Version.string: "1.23"})
+                                 headers={api_base.Version.string: "1.24"})
         self.assertEqual(http_client.ACCEPTED, response.status_code)
         self.assertEqual(b'', response.body)
         self.mock_cnps.assert_called_once_with(mock.ANY,
@@ -2381,7 +2381,7 @@ class TestPut(test_api_base.BaseApiTest):
     def test_power_state_power_on_no_timeout_invalid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.POWER_ON},
-                                 headers={api_base.Version.string: "1.22"})
+                                 headers={api_base.Version.string: "1.23"})
         self.assertEqual(http_client.ACCEPTED, response.status_code)
         self.assertEqual(b'', response.body)
         self.mock_cnps.assert_called_once_with(mock.ANY,
@@ -2406,7 +2406,7 @@ class TestPut(test_api_base.BaseApiTest):
     def test_power_state_power_on_valid_timeout_valid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.POWER_ON, 'timeout': 2},
-                                 headers={api_base.Version.string: "1.23"})
+                                 headers={api_base.Version.string: "1.24"})
         self.assertEqual(http_client.ACCEPTED, response.status_code)
         self.assertEqual(b'', response.body)
         self.mock_cnps.assert_called_once_with(mock.ANY,
@@ -2423,7 +2423,7 @@ class TestPut(test_api_base.BaseApiTest):
     def test_power_state_power_on_valid_timeout_invalid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.POWER_ON, 'timeout': 2},
-                                 headers={api_base.Version.string: "1.22"},
+                                 headers={api_base.Version.string: "1.23"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
@@ -2440,7 +2440,7 @@ class TestPut(test_api_base.BaseApiTest):
     def test_power_state_power_on_invalid_timeout_valid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.POWER_ON, 'timeout': 0},
-                                 headers={api_base.Version.string: "1.23"},
+                                 headers={api_base.Version.string: "1.24"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
@@ -2449,7 +2449,7 @@ class TestPut(test_api_base.BaseApiTest):
     def test_power_state_power_on_invalid_timeout_invalid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.POWER_ON, 'timeout': 0},
-                                 headers={api_base.Version.string: "1.22"},
+                                 headers={api_base.Version.string: "1.23"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
@@ -2466,7 +2466,7 @@ class TestPut(test_api_base.BaseApiTest):
     def test_power_state_soft_power_off_no_timeout_valid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.SOFT_POWER_OFF},
-                                 headers={api_base.Version.string: "1.23"})
+                                 headers={api_base.Version.string: "1.24"})
         self.assertEqual(http_client.ACCEPTED, response.status_code)
         self.assertEqual(b'', response.body)
         self.mock_cnps.assert_called_once_with(mock.ANY,
@@ -2483,7 +2483,7 @@ class TestPut(test_api_base.BaseApiTest):
     def test_power_state_soft_power_off_no_timeout_invalid_soft_ver(self):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.SOFT_POWER_OFF},
-                                 headers={api_base.Version.string: "1.22"},
+                                 headers={api_base.Version.string: "1.23"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
@@ -2502,7 +2502,7 @@ class TestPut(test_api_base.BaseApiTest):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.SOFT_POWER_OFF,
                                   'timeout': 2},
-                                 headers={api_base.Version.string: "1.23"})
+                                 headers={api_base.Version.string: "1.24"})
         self.assertEqual(http_client.ACCEPTED, response.status_code)
         self.assertEqual(b'', response.body)
         self.mock_cnps.assert_called_once_with(mock.ANY,
@@ -2520,7 +2520,7 @@ class TestPut(test_api_base.BaseApiTest):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.SOFT_POWER_OFF,
                                   'timeout': 2},
-                                 headers={api_base.Version.string: "1.22"},
+                                 headers={api_base.Version.string: "1.23"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
@@ -2539,7 +2539,7 @@ class TestPut(test_api_base.BaseApiTest):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.SOFT_POWER_OFF,
                                   'timeout': 0},
-                                 headers={api_base.Version.string: "1.23"},
+                                 headers={api_base.Version.string: "1.24"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
@@ -2549,7 +2549,7 @@ class TestPut(test_api_base.BaseApiTest):
         response = self.put_json('/nodes/%s/states/power' % self.node.uuid,
                                  {'target': states.SOFT_POWER_OFF,
                                   'timeout': 0},
-                                 headers={api_base.Version.string: "1.22"},
+                                 headers={api_base.Version.string: "1.23"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
