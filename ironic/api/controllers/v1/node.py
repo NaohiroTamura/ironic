@@ -156,7 +156,7 @@ def hide_fields_in_newer_versions(obj):
     if pecan.request.version.minor < versions.MINOR_20_NETWORK_INTERFACE:
         obj.network_interface = wsme.Unset
 
-    if pecan.request.version.minor < versions.MINOR_23_SOFT_POWER_OFF:
+    if pecan.request.version.minor < versions.MINOR_24_SOFT_POWER_OFF:
         obj.supported_power_states = wsme.Unset
 
     if not api_utils.allow_resource_class():
