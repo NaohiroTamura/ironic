@@ -105,6 +105,10 @@ class TestLookup(test_api_base.BaseApiTest):
                          set(data['node']))
         self._check_config(data)
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_topic_for',
+                       lambda *n: 'test-topic')
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     @mock.patch.object(ramdisk.LOG, 'warning', autospec=True)
     def test_ignore_malformed_address(self, mock_log):
         obj_utils.create_test_port(self.context,
@@ -117,7 +121,8 @@ class TestLookup(test_api_base.BaseApiTest):
             '/lookup?addresses=%s' % addresses,
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         self.assertEqual(self.node.uuid, data['node']['uuid'])
-        self.assertEqual(set(ramdisk._LOOKUP_RETURN_FIELDS) | {'links'},
+        self.assertEqual(set(ramdisk._LOOKUP_RETURN_FIELDS) |
+                         {'links', 'supported_power_states'},
                          set(data['node']))
         self._check_config(data)
         self.assertTrue(mock_log.called)
