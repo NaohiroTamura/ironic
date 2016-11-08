@@ -189,6 +189,7 @@ class ConductorManager(base_manager.BaseConductorManager):
     @messaging.expected_exceptions(exception.NoFreeConductorWorker,
                                    exception.NodeLocked,
                                    exception.InvalidParameterValue,
+                                   exception.MissingParameterValue,
                                    exception.UnsupportedDriverExtension)
     def vendor_passthru(self, context, node_id, driver_method,
                         http_method, info):
@@ -275,6 +276,7 @@ class ConductorManager(base_manager.BaseConductorManager):
     @METRICS.timer('ConductorManager.driver_vendor_passthru')
     @messaging.expected_exceptions(exception.NoFreeConductorWorker,
                                    exception.InvalidParameterValue,
+                                   exception.MissingParameterValue,
                                    exception.UnsupportedDriverExtension,
                                    exception.DriverNotFound)
     def driver_vendor_passthru(self, context, driver_name, driver_method,
@@ -1541,7 +1543,8 @@ class ConductorManager(base_manager.BaseConductorManager):
     @messaging.expected_exceptions(exception.NodeLocked,
                                    exception.UnsupportedDriverExtension,
                                    exception.NodeConsoleNotEnabled,
-                                   exception.InvalidParameterValue)
+                                   exception.InvalidParameterValue,
+                                   exception.MissingParameterValue)
     def get_console_information(self, context, node_id):
         """Get connection information about the console.
 
@@ -1573,7 +1576,8 @@ class ConductorManager(base_manager.BaseConductorManager):
     @messaging.expected_exceptions(exception.NoFreeConductorWorker,
                                    exception.NodeLocked,
                                    exception.UnsupportedDriverExtension,
-                                   exception.InvalidParameterValue)
+                                   exception.InvalidParameterValue,
+                                   exception.MissingParameterValue)
     def set_console_mode(self, context, node_id, enabled):
         """Enable/Disable the console.
 
@@ -1936,7 +1940,8 @@ class ConductorManager(base_manager.BaseConductorManager):
     @METRICS.timer('ConductorManager.set_boot_device')
     @messaging.expected_exceptions(exception.NodeLocked,
                                    exception.UnsupportedDriverExtension,
-                                   exception.InvalidParameterValue)
+                                   exception.InvalidParameterValue,
+                                   exception.MissingParameterValue)
     def set_boot_device(self, context, node_id, device, persistent=False):
         """Set the boot device for a node.
 
@@ -1970,7 +1975,8 @@ class ConductorManager(base_manager.BaseConductorManager):
     @METRICS.timer('ConductorManager.get_boot_device')
     @messaging.expected_exceptions(exception.NodeLocked,
                                    exception.UnsupportedDriverExtension,
-                                   exception.InvalidParameterValue)
+                                   exception.InvalidParameterValue,
+                                   exception.MissingParameterValue)
     def get_boot_device(self, context, node_id):
         """Get the current boot device.
 
@@ -2004,7 +2010,8 @@ class ConductorManager(base_manager.BaseConductorManager):
     @METRICS.timer('ConductorManager.get_supported_boot_devices')
     @messaging.expected_exceptions(exception.NodeLocked,
                                    exception.UnsupportedDriverExtension,
-                                   exception.InvalidParameterValue)
+                                   exception.InvalidParameterValue,
+                                   exception.MissingParameterValue)
     def get_supported_boot_devices(self, context, node_id):
         """Get the list of supported devices.
 
@@ -2108,7 +2115,8 @@ class ConductorManager(base_manager.BaseConductorManager):
     @METRICS.timer('ConductorManager.set_target_raid_config')
     @messaging.expected_exceptions(exception.NodeLocked,
                                    exception.UnsupportedDriverExtension,
-                                   exception.InvalidParameterValue)
+                                   exception.InvalidParameterValue,
+                                   exception.MissingParameterValue)
     def set_target_raid_config(self, context, node_id, target_raid_config):
         """Stores the target RAID configuration on the node.
 
