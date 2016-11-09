@@ -3463,6 +3463,18 @@ class UpdatePortTestCase(mgr_utils.ServiceSetUpMixin,
         self.assertEqual(['power on', 'power off', 'rebooting'],
                          power_states)
 
+    def test_get_supported_power_states_soft(self):
+        mgr_utils.mock_the_extension_manager(driver="fake_soft_power")
+        self.driver = driver_factory.get_driver("fake_soft_power")
+        node = obj_utils.create_test_node(self.context,
+                                          driver='fake_soft_power')
+        power_states = self.service.get_supported_power_states(
+            self.context, node.uuid)
+
+        self.assertEqual(['power on', 'power off', 'rebooting',
+                          'soft rebooting', 'soft power off'],
+                         power_states)
+
 
 @mgr_utils.mock_record_keepalive
 @mock.patch.object(n_flat.FlatNetwork, 'validate', autospec=True)
