@@ -109,10 +109,10 @@ def _wait_power_state(task, target_state, timeout=None):
     for i in range(0, max_retry):
         boot_status_value = snmp_client.get(BOOT_STATUS_OID)
         LOG.debug("iRMC SNMP agent of %(node_id)s returned "
-                  "boot status value %(bootstatus)s at %(times)s."
-                  % {'node_id': node.uuid,
-                     'bootstatus': BOOT_STATUS[boot_status_value],
-                     'times': i})
+                  "boot status value %(bootstatus)s at %(times)s.",
+                  {'node_id': node.uuid,
+                   'bootstatus': BOOT_STATUS[boot_status_value],
+                   'times': i})
         if _is_expected_power_state(target_state, boot_status_value):
             # iRMC acknowledged the target state
             node.last_error = None
