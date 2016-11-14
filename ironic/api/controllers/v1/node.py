@@ -454,7 +454,7 @@ class NodeStatesController(rest.RestController):
         :raises: InvalidStateRequested (HTTP 400) if the requested target
                  state is not valid or if the node is in CLEANING state.
         :raises: NotAcceptable for soft reboot, soft power off or timeout,
-          if requested version of the API is less than 1.25.
+          if requested version of the API is less than 1.26.
 
         """
         cdict = pecan.request.context.to_policy_values()
