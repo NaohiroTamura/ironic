@@ -263,6 +263,7 @@ class IRMCPower(base.PowerInterface):
         elif current_pstate == states.POWER_OFF:
             _set_power_state(task, states.POWER_ON, timeout=timeout)
 
+    @METRICS.timer('IRMCPower.get_supported_power_states')
     def get_supported_power_states(self, task):
         """Get a list of the supported power states.
 
