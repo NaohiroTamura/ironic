@@ -176,7 +176,7 @@ class ConductorManager(base_manager.BaseConductorManager):
         return node_obj
 
     @METRICS.timer('ConductorManager.change_node_power_state')
-    @messaging.expected_exceptions(exception.InvalidParameterValue,
+    @messaging.expected_exceptions(exception.Invalid,
                                    exception.NoFreeConductorWorker,
                                    exception.NodeLocked)
     def change_node_power_state(self, context, node_id, new_state,
@@ -196,6 +196,7 @@ class ConductorManager(base_manager.BaseConductorManager):
           power state. ``None`` indicates to use default timeout.
         :raises: NoFreeConductorWorker when there is no free worker to start
                  async task.
+        :raises: Invalid
         :raises: InvalidParameterValue
         :raises: MissingParameterValue
 

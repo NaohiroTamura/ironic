@@ -2434,7 +2434,7 @@ class TestPut(test_api_base.BaseApiTest):
                                  {'target': states.POWER_ON, 'timeout': 0},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
-        self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
+        self.assertEqual(http_client.BAD_REQUEST, response.status_code)
         self.assertTrue(response.json['error_message'])
 
     def test_power_state_power_on_invalid_timeout_valid_soft_ver(self):
@@ -2443,7 +2443,7 @@ class TestPut(test_api_base.BaseApiTest):
                                  headers={api_base.Version.string: "1.26"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
-        self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
+        self.assertEqual(http_client.BAD_REQUEST, response.status_code)
         self.assertTrue(response.json['error_message'])
 
     def test_power_state_power_on_invalid_timeout_invalid_soft_ver(self):
@@ -2452,7 +2452,7 @@ class TestPut(test_api_base.BaseApiTest):
                                  headers={api_base.Version.string: "1.25"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
-        self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
+        self.assertEqual(http_client.BAD_REQUEST, response.status_code)
         self.assertTrue(response.json['error_message'])
 
     def test_power_state_soft_power_off_no_timeout_no_ver(self):
@@ -2542,7 +2542,7 @@ class TestPut(test_api_base.BaseApiTest):
                                  headers={api_base.Version.string: "1.26"},
                                  expect_errors=True)
         self.assertEqual('application/json', response.content_type)
-        self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_code)
+        self.assertEqual(http_client.BAD_REQUEST, response.status_code)
         self.assertTrue(response.json['error_message'])
 
     def test_power_state_soft_power_off_invalid_timeout_invalid_soft_ver(self):

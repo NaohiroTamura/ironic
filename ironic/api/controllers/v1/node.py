@@ -453,8 +453,9 @@ class NodeStatesController(rest.RestController):
                  already in progress.
         :raises: InvalidStateRequested (HTTP 400) if the requested target
                  state is not valid or if the node is in CLEANING state.
-        :raises: NotAcceptable for soft reboot, soft power off or timeout,
-          if requested version of the API is less than 1.26.
+        :raises: NotAcceptable (HTTP 406) for soft reboot, soft power off or
+          timeout parameter, if requested version of the API is less than 1.26.
+        :raises: Invalid (HTTP 400) if timeout value is less than 1.
 
         """
         cdict = pecan.request.context.to_policy_values()
@@ -471,7 +472,7 @@ class NodeStatesController(rest.RestController):
         # Note(naohirot): This check is workaround because
         #                 wtypes.IntegerType(minimum=1) is not effective
         if timeout is not None and timeout < 1:
-            raise exception.NotAcceptable(
+            raise exception.Invalid(
                 _("timeout has to be positive integer"))
 
         if target not in ALLOWED_TARGET_POWER_STATES:

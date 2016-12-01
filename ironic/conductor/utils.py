@@ -162,18 +162,19 @@ def node_power_action(task, new_state, timeout=None):
                 task.driver.power.set_power_state(task, new_state,
                                                   timeout=timeout)
             else:
-                LOG.error(_LE("The set_power_state method of %s(driver_name)s "
-                              "doesn't support 'timeout' parameter."),
-                          {'driver_name': node.driver})
+                LOG.warning(
+                    _LW("The set_power_state method of %s(driver_name)s "
+                        "doesn't support 'timeout' parameter."),
+                    {'driver_name': node.driver})
                 task.driver.power.set_power_state(task, new_state)
         else:
             if ('timeout' in reflection.get_signature(
                     task.driver.power.reboot).parameters):
                 task.driver.power.reboot(task, timeout=timeout)
             else:
-                LOG.error(_LE("The reboot method of %s(driver_name)s "
-                              "doesn't support 'timeout' parameter."),
-                          {'driver_name': node.driver})
+                LOG.warning(_LW("The reboot method of %s(driver_name)s "
+                                "doesn't support 'timeout' parameter."),
+                            {'driver_name': node.driver})
                 task.driver.power.reboot(task)
     except Exception as e:
         with excutils.save_and_reraise_exception():

@@ -372,7 +372,8 @@ def allow_raid_config():
 def allow_soft_power_off():
     """Check if Soft Power Off is allowed for the node.
 
-    Version 1.26 of the API allows Soft Power Off for the node.
+    Version 1.26 of the API allows Soft Power Off, including Soft Reboot, for
+    the node.
     """
     return pecan.request.version.minor >= versions.MINOR_26_SOFT_POWER_OFF
 
