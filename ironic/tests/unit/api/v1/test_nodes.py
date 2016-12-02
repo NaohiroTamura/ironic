@@ -1082,6 +1082,8 @@ class TestListNodes(test_api_base.BaseApiTest):
         # rpc_node lookup and pass that downwards
         mock_vdi.assert_called_once_with(mock.ANY, node.uuid, 'test-topic')
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     def test_ssh_creds_masked(self):
         driver_info = {"ssh_password": "password", "ssh_key_contents": "key"}
         node = obj_utils.create_test_node(self.context,
