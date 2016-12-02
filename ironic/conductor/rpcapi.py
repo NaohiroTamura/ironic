@@ -197,7 +197,7 @@ class ConductorAPI(object):
                  async task.
 
         """
-        cctxt = self.client.prepare(topic=topic or self.topic, version='1.36')
+        cctxt = self.client.prepare(topic=topic or self.topic, version='1.37')
         return cctxt.call(context, 'change_node_power_state', node_id=node_id,
                           new_state=new_state, timeout=timeout)
 
