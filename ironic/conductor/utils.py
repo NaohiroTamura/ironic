@@ -118,7 +118,6 @@ def node_power_action(task, new_state, timeout=None):
                         "= '%(state)s'."),
                     {'node': node.uuid, 'state': curr_state})
 
-    curr_state = None
     try:
         curr_state = task.driver.power.get_power_state(task)
     except Exception as e:

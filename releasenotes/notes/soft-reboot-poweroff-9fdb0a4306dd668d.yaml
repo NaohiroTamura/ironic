@@ -1,5 +1,6 @@
 ---
 features:
   - Support "soft reboot" and "soft power off" requests to change
-    node's power state, and also introduce "timeout" optional
-    parameter.
+    node's power state, and also introduce ``timeout`` optional
+    parameter and ``[conductor]/soft_power_off_timeout`` configuration
+    option.
