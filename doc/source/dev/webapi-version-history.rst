@@ -2,7 +2,7 @@
 REST API Version History
 ========================
 
-**1.27**
+**1.27** (Ocata)
 
     Add ``soft reboot`` and ``soft power off`` to the ``target`` field of the
     power state. And also add ``timeout`` field to the power state.
