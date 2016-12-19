@@ -454,7 +454,7 @@ class NodeStatesController(rest.RestController):
         :raises: InvalidStateRequested (HTTP 400) if the requested target
                  state is not valid or if the node is in CLEANING state.
         :raises: NotAcceptable (HTTP 406) for soft reboot, soft power off or
-          timeout parameter, if requested version of the API is less than 1.26.
+          timeout parameter, if requested version of the API is less than 1.27.
         :raises: Invalid (HTTP 400) if timeout value is less than 1.
 
         """
