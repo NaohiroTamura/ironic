@@ -210,6 +210,9 @@ class ConductorManager(base_manager.BaseConductorManager):
 
             if (new_state not in
                 task.driver.power.get_supported_power_states(task)):
+                # FIXME(naohirot):
+                # After driver composition, we should print power interface
+                # name here instead of driver.
                 raise exception.InvalidParameterValue(
                     _('The driver %(driver)s does not support the power state,'
                       ' %(state)s') %
@@ -224,10 +227,11 @@ class ConductorManager(base_manager.BaseConductorManager):
             # Set the target_power_state and clear any last_error, since we're
             # starting a new operation. This will expose to other processes
             # and clients that work is in progress.
-            if new_state == states.REBOOT:
+            if new_state in (states.POWER_ON, states.REBOOT,
+                             states.SOFT_REBOOT):
                 task.node.target_power_state = states.POWER_ON
             else:
-                task.node.target_power_state = new_state
+                task.node.target_power_state = states.POWER_OFF
 
             task.node.last_error = None
             task.node.save()

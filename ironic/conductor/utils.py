@@ -148,8 +148,8 @@ def node_power_action(task, new_state, timeout=None):
     # Set the target_power_state and clear any last_error, if we're
     # starting a new operation. This will expose to other processes
     # and clients that work is in progress.
-    if node['target_power_state'] != new_state:
-        node['target_power_state'] = new_state
+    if node['target_power_state'] != target_state:
+        node['target_power_state'] = target_state
         node['last_error'] = None
         node.save()
 
@@ -161,6 +161,9 @@ def node_power_action(task, new_state, timeout=None):
                 task.driver.power.set_power_state(task, new_state,
                                                   timeout=timeout)
             else:
+                # FIXME(naohirot):
+                # After driver composition, we should print power interface
+                # name here instead of driver.
                 LOG.warning(
                     _LW("The set_power_state method of %s(driver_name)s "
                         "doesn't support 'timeout' parameter."),

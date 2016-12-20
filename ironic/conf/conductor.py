@@ -133,6 +133,7 @@ opts = [
                       'state. Set to 0 to disable timeout.')),
     cfg.IntOpt('soft_power_off_timeout',
                default=600,
+               min=1,
                help=_('Timeout (in seconds) of soft reboot and soft power '
                       'off operation. This value always has to be positive.')),
 ]
