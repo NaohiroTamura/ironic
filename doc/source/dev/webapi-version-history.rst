@@ -6,7 +6,7 @@ REST API Version History
 
     Add ``soft rebooting`` and ``soft power off`` as possible values
     for the ``target`` field of the power state change payload, and
-    also adds ``timeout`` field to it.
+    also add ``timeout`` field to it.
 
 **1.26** (Ocata)
 
