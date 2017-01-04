@@ -90,7 +90,7 @@ class ConductorAPI(object):
     """
 
     # NOTE(rloo): This must be in sync with manager.ConductorManager's.
-    RPC_API_VERSION = '1.38'
+    RPC_API_VERSION = '1.39'
 
     def __init__(self, topic=None):
         super(ConductorAPI, self).__init__()
@@ -197,7 +197,7 @@ class ConductorAPI(object):
                  async task.
 
         """
-        cctxt = self.client.prepare(topic=topic or self.topic, version='1.38')
+        cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
         return cctxt.call(context, 'change_node_power_state', node_id=node_id,
                           new_state=new_state, timeout=timeout)
 
