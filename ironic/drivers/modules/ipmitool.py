@@ -853,8 +853,10 @@ class IPMIPower(base.PowerInterface):
             intermediate_target_state = states.POWER_OFF
             if intermediate_state != intermediate_target_state:
                 raise exception.PowerStateFailure(
-                    pstate=(intermediate_target_state + ' in the middle of ' +
-                            new_state))
+                    pstate=(_(
+                        "%(intermediate)s in the middle of %(new_state)s") %
+                        {'intermediate': intermediate_target_state,
+                         'new_state': new_state}))
             driver_utils.ensure_next_boot_device(task, driver_info)
             target_state = states.POWER_ON
             state = _power_on(driver_info, timeout=timeout)
