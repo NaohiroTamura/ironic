@@ -549,7 +549,7 @@ def _power_on(driver_info, timeout=None):
 
     :param driver_info: the ipmitool parameters for accessing a node.
     :param timeout: timeout (in seconds) positive integer (> 0) for any
-      power state. ``None`` indicates to use default timeout.
+      power state. ``None`` indicates default timeout.
     :returns: one of ironic.common.states POWER_ON or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
@@ -562,7 +562,7 @@ def _power_off(driver_info, timeout=None):
 
     :param driver_info: the ipmitool parameters for accessing a node.
     :param timeout: timeout (in seconds) positive integer (> 0) for any
-      power state. ``None`` indicates to use default timeout.
+      power state. ``None`` indicates default timeout.
     :returns: one of ironic.common.states POWER_OFF or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
@@ -575,7 +575,7 @@ def _soft_power_off(driver_info, timeout=None):
 
     :param driver_info: the ipmitool parameters for accessing a node.
     :param timeout: timeout (in seconds) positive integer (> 0) for any
-      power state. ``None`` indicates to use default timeout.
+      power state. ``None`` indicates default timeout.
     :returns: one of ironic.common.states POWER_OFF or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
@@ -888,8 +888,10 @@ class IPMIPower(base.PowerInterface):
         intermediate_state = _power_off(driver_info, timeout=timeout)
         if intermediate_state != states.POWER_OFF:
             raise exception.PowerStateFailure(
-                pstate=(states.POWER_OFF + ' in the middle of ' +
-                        states.REBOOT))
+                pstate=(_(
+                    "%(power_off)s in the middle of %(reboot)s") %
+                    {'power_off': states.POWER_OFF,
+                     'reboot': states.REBOOT}))
         driver_utils.ensure_next_boot_device(task, driver_info)
         state = _power_on(driver_info, timeout=timeout)
 
