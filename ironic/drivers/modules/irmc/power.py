@@ -150,7 +150,7 @@ def _set_power_state(task, target_state, timeout=None):
     :param task: a TaskManager instance containing the node to act on.
     :param target_state: target state of the node.
     :param timeout: timeout (in seconds) positive integer (> 0) for any
-      power state. ``None`` indicates to use default timeout.
+      power state. ``None`` indicates default timeout.
     :raises: InvalidParameterValue if an invalid power state was specified.
     :raises: MissingParameterValue if some mandatory information
       is missing on the node
@@ -238,7 +238,7 @@ class IRMCPower(base.PowerInterface):
         :param task: a TaskManager instance containing the node to act on.
         :param power_state: Any power state from :mod:`ironic.common.states`.
         :param timeout: timeout (in seconds) positive integer (> 0) for any
-          power state. ``None`` indicates to use default timeout.
+          power state. ``None`` indicates default timeout.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: MissingParameterValue if some mandatory information
           is missing on the node
@@ -253,7 +253,7 @@ class IRMCPower(base.PowerInterface):
 
         :param task: a TaskManager instance containing the node to act on.
         :param timeout: timeout (in seconds) positive integer (> 0) for any
-          power state. ``None`` indicates to use default timeout.
+          power state. ``None`` indicates default timeout.
         :raises: InvalidParameterValue if an invalid power state was specified.
         :raises: IRMCOperationError if failed to set the power state.
         """
