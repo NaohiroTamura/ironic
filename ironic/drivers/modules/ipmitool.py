@@ -471,7 +471,7 @@ def _sleep_time(iter):
     return iter ** 2
 
 
-def _set_and_wait(new_state, driver_info, timeout=None):
+def _set_and_wait(power_action, driver_info, timeout=None):
     """Helper function for DynamicLoopingCall.
 
     This method changes the power state and polls the BMC until the desired
@@ -483,7 +483,8 @@ def _set_and_wait(new_state, driver_info, timeout=None):
     if a driver is concerned, the state should be checked prior to calling this
     method.
 
-    :param new_state: desired power state
+    :param power_action: the action Ironic will perform when changing the
+      power state of the node.
     :param timeout: timeout (in seconds) positive integer (> 0) for any
       power state. ``None`` indicates to use default timeout.
     :param driver_info: the ipmitool parameters for accessing a node.
@@ -492,13 +493,13 @@ def _set_and_wait(new_state, driver_info, timeout=None):
     """
     retry_timeout = timeout or CONF.ipmi.retry_timeout
 
-    if new_state == states.POWER_ON:
+    if power_action == states.POWER_ON:
         cmd_name = "on"
         target_state = states.POWER_ON
-    elif new_state == states.POWER_OFF:
+    elif power_action == states.POWER_OFF:
         cmd_name = "off"
         target_state = states.POWER_OFF
-    elif new_state == states.SOFT_POWER_OFF:
+    elif power_action == states.SOFT_POWER_OFF:
         cmd_name = "soft"
         target_state = states.POWER_OFF
         retry_timeout = timeout or CONF.conductor.soft_power_off_timeout
@@ -548,8 +549,8 @@ def _power_on(driver_info, timeout=None):
     """Turn the power ON for this node.
 
     :param driver_info: the ipmitool parameters for accessing a node.
-    :param timeout: timeout (in seconds) positive integer (> 0) for any
-      power state. ``None`` indicates default timeout.
+    :param timeout: the timeout in seconds (> 0) to wait for the power
+      action to be completed. ``None`` indicates default timeout".
     :returns: one of ironic.common.states POWER_ON or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
@@ -561,8 +562,8 @@ def _power_off(driver_info, timeout=None):
     """Turn the power OFF for this node.
 
     :param driver_info: the ipmitool parameters for accessing a node.
-    :param timeout: timeout (in seconds) positive integer (> 0) for any
-      power state. ``None`` indicates default timeout.
+    :param timeout: the timeout in seconds (> 0) to wait for the power
+      action to be completed. ``None`` indicates default timeout".
     :returns: one of ironic.common.states POWER_OFF or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
@@ -574,8 +575,8 @@ def _soft_power_off(driver_info, timeout=None):
     """Turn the power SOFT OFF for this node.
 
     :param driver_info: the ipmitool parameters for accessing a node.
-    :param timeout: timeout (in seconds) positive integer (> 0) for any
-      power state. ``None`` indicates default timeout.
+    :param timeout: the timeout in seconds (> 0) to wait for the power
+      action to be completed. ``None`` indicates default timeout".
     :returns: one of ironic.common.states POWER_OFF or ERROR.
     :raises: IPMIFailure on an error from ipmitool (from _power_status call).
 
@@ -820,11 +821,11 @@ class IPMIPower(base.PowerInterface):
 
     @METRICS.timer('IPMIPower.set_power_state')
     @task_manager.require_exclusive_lock
-    def set_power_state(self, task, new_state, timeout=None):
+    def set_power_state(self, task, power_state, timeout=None):
         """Turn the power on, off, soft reboot, or soft power off.
 
         :param task: a TaskManager instance containing the node to act on.
-        :param new_state: desired power state.
+        :param power_state: desired power state.
           one of ironic.common.states, POWER_ON, POWER_OFF, SOFT_POWER_OFF,
           or SOFT_REBOOT.
         :param timeout: timeout (in seconds) positive integer (> 0) for any
@@ -838,32 +839,32 @@ class IPMIPower(base.PowerInterface):
         """
         driver_info = _parse_driver_info(task.node)
 
-        if new_state == states.POWER_ON:
+        if power_state == states.POWER_ON:
             driver_utils.ensure_next_boot_device(task, driver_info)
             target_state = states.POWER_ON
             state = _power_on(driver_info, timeout=timeout)
-        elif new_state == states.POWER_OFF:
+        elif power_state == states.POWER_OFF:
             target_state = states.POWER_OFF
             state = _power_off(driver_info, timeout=timeout)
-        elif new_state == states.SOFT_POWER_OFF:
+        elif power_state == states.SOFT_POWER_OFF:
             target_state = states.POWER_OFF
             state = _soft_power_off(driver_info, timeout=timeout)
-        elif new_state == states.SOFT_REBOOT:
+        elif power_state == states.SOFT_REBOOT:
             intermediate_state = _soft_power_off(driver_info, timeout=timeout)
             intermediate_target_state = states.POWER_OFF
             if intermediate_state != intermediate_target_state:
                 raise exception.PowerStateFailure(
                     pstate=(_(
-                        "%(intermediate)s in the middle of %(new_state)s") %
+                        "%(intermediate)s while on %(power_state)s") %
                         {'intermediate': intermediate_target_state,
-                         'new_state': new_state}))
+                         'power_state': power_state}))
             driver_utils.ensure_next_boot_device(task, driver_info)
             target_state = states.POWER_ON
             state = _power_on(driver_info, timeout=timeout)
         else:
             raise exception.InvalidParameterValue(
                 _("set_power_state called "
-                  "with invalid power state %s.") % new_state)
+                  "with invalid power state %s.") % power_state)
 
         if state != target_state:
             raise exception.PowerStateFailure(pstate=target_state)
@@ -889,7 +890,7 @@ class IPMIPower(base.PowerInterface):
         if intermediate_state != states.POWER_OFF:
             raise exception.PowerStateFailure(
                 pstate=(_(
-                    "%(power_off)s in the middle of %(reboot)s") %
+                    "%(power_off)s while on %(reboot)s") %
                     {'power_off': states.POWER_OFF,
                      'reboot': states.REBOOT}))
         driver_utils.ensure_next_boot_device(task, driver_info)
