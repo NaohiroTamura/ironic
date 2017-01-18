@@ -15,10 +15,9 @@
 """
 iRMC Power Driver using the Base Server Profile
 """
-import time
-
 from ironic_lib import metrics_utils
 from oslo_log import log as logging
+from oslo_service import loopingcall
 from oslo_utils import importutils
 
 from ironic.common import exception
@@ -83,8 +82,8 @@ def _is_expected_power_state(target_state, boot_status_value):
     elif (target_state == states.SOFT_REBOOT and
           boot_status_value == BOOT_STATUS_VALUE['os-running']):
         return True
-    else:
-        return False
+
+    return False
 
 
 def _wait_power_state(task, target_state, timeout=None):
@@ -106,42 +105,51 @@ def _wait_power_state(task, target_state, timeout=None):
     retry_timeout_soft = timeout or CONF.conductor.soft_power_off_timeout
     max_retry = int(retry_timeout_soft / interval)
 
-    for i in range(0, max_retry):
-        boot_status_value = snmp_client.get(BOOT_STATUS_OID)
+    def _wait(mutable):
+        mutable['boot_status_value'] = snmp_client.get(BOOT_STATUS_OID)
+        mutable['times'] += 1
         LOG.debug("iRMC SNMP agent of %(node_id)s returned "
                   "boot status value %(bootstatus)s on attempt %(times)s.",
                   {'node_id': node.uuid,
-                   'bootstatus': BOOT_STATUS[boot_status_value],
-                   'times': i + 1})
-        if _is_expected_power_state(target_state, boot_status_value):
-            # iRMC acknowledged the target state
-            node.last_error = None
-            node.power_state = target_state
-            node.target_power_state = states.NOSTATE
-            node.save()
-            LOG.info(_LI('iRMC successfully set node %(node_id)s '
-                         'power state to %(bootstatus)s.'),
-                     {'node_id': node.uuid,
-                      'bootstatus': BOOT_STATUS[boot_status_value]})
-            return
-        else:
-            time.sleep(interval)
+                   'bootstatus': BOOT_STATUS[mutable['boot_status_value']],
+                   'times': mutable['times']})
 
-    # iRMC failed to acknowledge the target state
-    node.last_error = _(
-        "iRMC failed to acknowledge the target state "
-        "for node %(node_id)s."
-        "Error: iRMC reteruend unexpected boot status value "
-        "%(bootstatus)s.") % {
-            'node_id': node.uuid,
-            'bootstatus': BOOT_STATUS[boot_status_value]}
-    node.power_state = states.ERROR
-    node.target_power_state = states.NOSTATE
-    node.save()
-    LOG.error(node.last_error)
-    error = _('unexpected boot status value')
-    raise exception.IRMCOperationError(operation=target_state,
-                                       error=error)
+        if mutable['times'] > max_retry:
+            mutable['state'] = states.ERROR
+            raise loopingcall.LoopingCallDone()
+
+        if _is_expected_power_state(target_state,
+                                    mutable['boot_status_value']):
+            mutable['state'] = target_state
+            raise loopingcall.LoopingCallDone()
+
+    store = {'state': None, 'times': 0, 'boot_status_value': None}
+    timer = loopingcall.FixedIntervalLoopingCall(_wait, store)
+    timer.start(interval=interval).wait()
+
+    if store['state'] == target_state:
+        # iRMC acknowledged the target state
+        node.last_error = None
+        node.power_state = target_state
+        node.target_power_state = states.NOSTATE
+        node.save()
+        LOG.info(_LI('iRMC successfully set node %(node_id)s '
+                     'power state to %(bootstatus)s.'),
+                 {'node_id': node.uuid,
+                  'bootstatus': BOOT_STATUS[store['boot_status_value']]})
+    else:
+        # iRMC failed to acknowledge the target state
+        node.last_error = (_(
+            "iRMC failed to acknowledge the target state. "
+            "Error: iRMC returned unexpected boot status value '%s'.") %
+            BOOT_STATUS[store['boot_status_value']])
+        node.power_state = states.ERROR
+        node.target_power_state = states.NOSTATE
+        node.save()
+        LOG.error(node.last_error)
+        error = _('unexpected boot status value')
+        raise exception.IRMCOperationError(operation=target_state,
+                                           error=error)
 
 
 def _set_power_state(task, target_state, timeout=None):
