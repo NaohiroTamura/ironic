@@ -101,6 +101,8 @@ API microversion 1.31 introduced all of the ``*_interface`` fields
 network_interface field, which was introduced in API microversion 1.20. If this
 field is not supplied when creating the Node, the default value will be used.
 
+API microversion 1.30 introduced the ``supported_power_states`` field.
+
 The list and example below are representative of the response as of API
 microversion 1.31.
 
@@ -132,6 +134,7 @@ microversion 1.31.
     - ports: n_ports
     - portgroups: n_portgroups
     - states: n_states
+    - supported_power_states: supported_power_states
     - resource_class: resource_class
     - boot_interface: boot_interface
     - console_interface: console_interface
@@ -173,6 +176,8 @@ the list of returned Nodes to be filtered by their driver name.
 API microversion 1.21 added the ``resource_class`` Request parameter,
 allowing the list of returned Nodes to be filtered by this field.
 
+API microversion 1.30 introduced the ``supported_power_states`` field.
+
 Normal response codes: 200
 
 .. TODO: add error codes
@@ -204,6 +209,7 @@ Response
     - instance_uuid: instance_uuid
     - power_state: power_state
     - provision_state: provision_state
+    - supported_power_states: supported_power_states
     - maintenance: maintenance
     - links: links
 
@@ -223,6 +229,8 @@ possible by passing in flags with the request.
 
 This method is particularly useful to locate the Node associated to a given
 Nova instance, eg. with a request to ``v1/nodes/detail?instance_uuid={NOVA INSTANCE UUID}``
+
+API microversion 1.30 introduced the ``supported_power_states`` field.
 
 Normal response codes: 200
 
@@ -275,6 +283,7 @@ Response
     - ports: n_ports
     - portgroups: n_portgroups
     - states: n_states
+    - supported_power_states: supported_power_states
     - resource_class: resource_class
     - boot_interface: boot_interface
     - console_interface: console_interface
@@ -300,6 +309,8 @@ Show Node Details
 Shows details for a node. By default, this will return the full representation
 of the resource; an optional ``fields`` parameter can be supplied to return
 only the specified set.
+
+API microversion 1.30 introduced the ``supported_power_states`` field.
 
 Normal response codes: 200
 
@@ -344,6 +355,7 @@ Response
     - ports: n_ports
     - portgroups: n_portgroups
     - states: n_states
+    - supported_power_states: supported_power_states
     - resource_class: resource_class
     - boot_interface: boot_interface
     - console_interface: console_interface
@@ -372,6 +384,8 @@ Note that this endpoint can not be used to request state changes, which are
 managed through sub-resources.
 
 API microversion 1.25 introduced the ability to unset a node's chassis UUID.
+
+API microversion 1.30 introduced the ``supported_power_states`` field.
 
 Normal response codes: 200
 
@@ -422,6 +436,7 @@ Response
     - ports: n_ports
     - portgroups: n_portgroups
     - states: n_states
+    - supported_power_states: supported_power_states
     - resource_class: resource_class
     - boot_interface: boot_interface
     - console_interface: console_interface
