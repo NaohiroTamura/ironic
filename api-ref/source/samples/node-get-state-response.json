@@ -7,5 +7,6 @@
   "raid_config": {},
   "target_power_state": null,
   "target_provision_state": null,
-  "target_raid_config": {}
+  "target_raid_config": {},
+  "supported_power_states": ["power on", "power off", "rebooting"]
 }

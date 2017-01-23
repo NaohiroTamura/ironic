@@ -283,6 +283,7 @@ Response
     - console_enabled: console_enabled
     - raid_config: raid_config
     - target_raid_config: target_raid_config
+    - supported_power_states: supported_power_states
 
 **Example node state:**
 
@@ -310,11 +311,16 @@ Request
 .. rest_parameters:: parameters.yaml
 
     - node_ident: node_ident
-    - target: power_state
+    - target: target_power_state
+    - timeout: power_timeout
 
 **Example request to power off a Node:**
 
 .. literalinclude:: samples/node-set-power-off.json
+
+**Example request to soft power off a Node with timeout:**
+
+.. literalinclude:: samples/node-set-soft-power-off.json
 
 
 Change Node Provision State

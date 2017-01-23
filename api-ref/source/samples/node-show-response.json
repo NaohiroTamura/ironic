@@ -52,6 +52,7 @@
     }
   ],
   "power_state": "power off",
+  "supported_power_states": ["power on", "power off", "rebooting"],
   "properties": {},
   "provision_state": "available",
   "provision_updated_at": "2016-08-18T22:28:49.946416+00:00",
