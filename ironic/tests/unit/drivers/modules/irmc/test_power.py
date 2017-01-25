@@ -71,7 +71,7 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
     @mock.patch.object(time, 'sleep', lambda seconds: None)
     @mock.patch('ironic.drivers.modules.irmc.power.snmp.SNMPClient',
                 spec_set=True, autospec=True)
-    def test__wait_power_state_ok(self, snmpclient_mock):
+    def test__wait_power_state_soft_power_off(self, snmpclient_mock):
         target_state = states.SOFT_POWER_OFF
         self.config(snmp_polling_interval=1, group='irmc')
         self.config(soft_power_off_timeout=3, group='conductor')
@@ -84,7 +84,26 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
 
             task.node.refresh()
             self.assertIsNone(task.node.last_error)
-            self.assertEqual(target_state, task.node.power_state)
+            self.assertEqual(states.POWER_OFF, task.node.power_state)
+            self.assertEqual(states.NOSTATE, task.node.target_power_state)
+
+    @mock.patch.object(time, 'sleep', lambda seconds: None)
+    @mock.patch('ironic.drivers.modules.irmc.power.snmp.SNMPClient',
+                spec_set=True, autospec=True)
+    def test__wait_power_state_soft_reboot(self, snmpclient_mock):
+        target_state = states.SOFT_REBOOT
+        self.config(snmp_polling_interval=1, group='irmc')
+        self.config(soft_power_off_timeout=3, group='conductor')
+        snmpclient_mock.return_value = mock.Mock(
+            **{'get.side_effect': [10, 6, 8]})
+
+        with task_manager.acquire(self.context, self.node.uuid,
+                                  shared=True) as task:
+            irmc_power._wait_power_state(task, target_state)
+
+            task.node.refresh()
+            self.assertIsNone(task.node.last_error)
+            self.assertEqual(states.POWER_ON, task.node.power_state)
             self.assertEqual(states.NOSTATE, task.node.target_power_state)
 
     @mock.patch.object(time, 'sleep', lambda seconds: None)
@@ -95,7 +114,7 @@ class IRMCPowerInternalMethodsTestCase(db_base.DbTestCase):
         self.config(snmp_polling_interval=1, group='irmc')
         self.config(soft_power_off_timeout=2, group='conductor')
         snmpclient_mock.return_value = mock.Mock(
-            **{'get.side_effect': [8, 8, 2]})
+            **{'get.side_effect': [8, 8, 8]})
 
         with task_manager.acquire(self.context, self.node.uuid,
                                   shared=True) as task:
