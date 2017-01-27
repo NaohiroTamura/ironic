@@ -212,7 +212,7 @@ class ConductorAPI(object):
         :returns: A list with the supported power states defined
                   in :mod:`ironic.common.states`.
         """
-        cctxt = self.client.prepare(topic=topic or self.topic, version='1.35')
+        cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
         return cctxt.call(context, 'get_supported_power_states',
                           node_id=node_id)
 
