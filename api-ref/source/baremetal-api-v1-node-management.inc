@@ -297,11 +297,11 @@ Change Node Power State
 
 Request a change to the Node's power state.
 
-Normal response code: 202
+Normal response code: 202 (Accepted)
 
 Error codes:
     - 409 (NodeLocked, ClientError)
-    - 400 (InvalidState)
+    - 400 (Invalid, InvalidStateRequested, InvalidParameterValue)
     - 406 (NotAcceptable)
     - 503 (NoFreeConductorWorkers)
 
