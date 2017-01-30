@@ -112,7 +112,7 @@ ALLOWED_TARGET_POWER_STATES = (ir_states.POWER_ON,
 def _get_supported_power_states(rpc_node):
     """"Get a list of the supported power states"""
     supported_power_states = None
-    if api_utils.allow_soft_power_off():
+    if api_utils.allow_supported_power_states():
         topic = pecan.request.rpcapi.get_topic_for(rpc_node)
         supported_power_states = (
             pecan.request.rpcapi.get_supported_power_states(
