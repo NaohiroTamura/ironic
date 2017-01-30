@@ -192,6 +192,9 @@ def _set_power_state(task, target_state, timeout=None):
 
     try:
         if target_state in (states.SOFT_REBOOT, states.SOFT_POWER_OFF):
+            # note (naohirot):
+            # The following call covers both cases since SOFT_REBOOT matches
+            # 'unknown' and SOFT_POWER_OFF matches 'off' or 'unknown'.
             _wait_power_state(task, states.SOFT_POWER_OFF, timeout=timeout)
         if target_state == states.SOFT_REBOOT:
             _wait_power_state(task, states.SOFT_REBOOT, timeout=timeout)
