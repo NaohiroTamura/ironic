@@ -84,7 +84,7 @@ class ConductorManager(base_manager.BaseConductorManager):
     """Ironic Conductor manager main class."""
 
     # NOTE(rloo): This must be in sync with rpcapi.ConductorAPI's.
-    RPC_API_VERSION = '1.40'
+    RPC_API_VERSION = '1.41'
 
     target = messaging.Target(version=RPC_API_VERSION)
 

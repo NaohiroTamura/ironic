@@ -1,0 +1,4 @@
+---
+features:
+  - Add support for "Show Node Details" and "Node State Summary" APIs to show
+    supported_power_states field for a node in Ironic API 1.30.
