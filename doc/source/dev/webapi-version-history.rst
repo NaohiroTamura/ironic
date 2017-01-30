@@ -2,6 +2,11 @@
 REST API Version History
 ========================
 
+**1.30** (Ocata)
+
+    Add support for "Show Node Details" and "Node State Summary" APIs to show
+    supported_power_states field for a node.
+
 **1.29** (Ocata)
 
     Add a new management API to support inject NMI,
