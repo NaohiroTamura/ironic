@@ -214,6 +214,7 @@ class ConductorAPI(object):
 
         :param context: request context.
         :param node_id: node id or uuid.
+        :param topic: RPC topic. Defaults to self.topic.
         :returns: A list with the supported power states defined
                   in :mod:`ironic.common.states`.
         """
