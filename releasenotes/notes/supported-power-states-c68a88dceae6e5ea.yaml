@@ -1,4 +1,6 @@
 ---
 features:
-  - Add support for "Show Node Details" and "Node State Summary" APIs to show
-    supported_power_states field for a node in Ironic API 1.30.
+  - Add support for "Create Node", "List Nodes", "List Nodes Detailed",
+    "Show Node Details", "Update Node" and "Node State Summary" APIs to show
+    supported_power_states response field for a node in Ironic API microversion
+    1.30.
