@@ -315,7 +315,6 @@ Response
     - states: n_states
     - network_interface: network_interface
     - resource_class: resource_class
-    - supported_power_states: supported_power_states
 
 **Example JSON representation of a Node:**
 

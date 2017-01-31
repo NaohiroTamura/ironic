@@ -283,7 +283,6 @@ Response
     - console_enabled: console_enabled
     - raid_config: raid_config
     - target_raid_config: target_raid_config
-    - supported_power_states: supported_power_states
 
 **Example node state:**
 
