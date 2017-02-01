@@ -326,9 +326,9 @@ class TestApiUtils(base.TestCase):
 
     @mock.patch.object(pecan, 'request', spec_set=['version'])
     def test_allow_supported_power_states(self, mock_request):
-        mock_request.version.minor = 30
+        mock_request.version.minor = 32
         self.assertTrue(utils.allow_supported_power_states())
-        mock_request.version.minor = 29
+        mock_request.version.minor = 31
         self.assertFalse(utils.allow_supported_power_states())
 
     @mock.patch.object(pecan, 'request', spec_set=['version'])

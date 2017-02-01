@@ -97,7 +97,7 @@ MINOR_28_VIFS_SUBCONTROLLER = 28
 MINOR_29_INJECT_NMI = 29
 MINOR_30_DYNAMIC_DRIVERS = 30
 MINOR_31_DYNAMIC_INTERFACES = 31
-MINOR_32_SUPPORTED_POWER_STATES = 30
+MINOR_32_SUPPORTED_POWER_STATES = 32
 
 # When adding another version, update MINOR_MAX_VERSION and also update
 # doc/source/dev/webapi-version-history.rst with a detailed explanation of

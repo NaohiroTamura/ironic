@@ -288,7 +288,13 @@ class TestListNodes(test_api_base.BaseApiTest):
             expect_errors=True)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_int)
 
-    def test_get_all_interface_fields(self):
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states')
+    def test_get_all_interface_fields(self, mock_get_supported_power_states):
+        expected_supported_power_states = [
+            "power on", "power off", "rebooting"]
+        mock_get_supported_power_states.return_value = (
+            expected_supported_power_states)
+
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id)
         fields_arg = ','.join(api_utils.V31_FIELDS)
@@ -1827,6 +1833,8 @@ class TestPatch(test_api_base.BaseApiTest):
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(http_client.BAD_REQUEST, response.status_code)
 
+    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
+                       lambda *n: [])
     def test_update_interface_fields(self):
         node = obj_utils.create_test_node(self.context,
                                           uuid=uuidutils.generate_uuid())

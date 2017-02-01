@@ -421,11 +421,11 @@ def allow_soft_power_off():
 def allow_supported_power_states():
     """Check if supported_power_states is allowed for the node.
 
-    Version 1.30 of the API allows "Show Node Details" and "Node State Summary"
-    APIs to show supported_power_states field for the node.
+    Version 1.32 of the API allows to show supported_power_states response
+    field for the node.
     """
     return (pecan.request.version.minor >=
-            versions.MINOR_30_SUPPORTED_POWER_STATES)
+            versions.MINOR_32_SUPPORTED_POWER_STATES)
 
 
 def allow_inject_nmi():
