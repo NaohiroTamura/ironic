@@ -62,8 +62,7 @@ BASE_VERSION = 1
 # v1.29: Add inject nmi.
 # v1.30: Add dynamic driver interactions.
 # v1.31: Add dynamic interfaces fields to node.
-# v1.32: Add supported_power_states field to "Show Node Details" and
-#        "Node State Summary" APIs
+# v1.32: Add supported_power_states response field
 
 MINOR_0_JUNO = 0
 MINOR_1_INITIAL_VERSION = 1
