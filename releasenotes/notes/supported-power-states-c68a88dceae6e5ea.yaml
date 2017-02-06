@@ -1,6 +1,12 @@
 ---
 features:
-  - Add support for "Create Node", "List Nodes", "List Nodes Detailed",
-    "Show Node Details", "Update Node" and "Node State Summary" APIs to show
-    supported_power_states response field for a node in Ironic API microversion
-    1.32.
+  - |
+    Add ``supported_power_states`` response field in the following Ironic APIs.
+    This feature is supported in Ironic API microversion 1.32 and above.
+
+    * Create Node, `/v1/nodes`
+    * List Nodes, `/v1/nodes`
+    * List Nodes Detailed, `/v1/nodes/detail`
+    * Show Node Details, `/v1/nodes/{node_ident}`
+    * Update Node, `/v1/nodes/{node_ident}`
+    * Node State Summary, `/v1/nodes/{node_ident}/states`
