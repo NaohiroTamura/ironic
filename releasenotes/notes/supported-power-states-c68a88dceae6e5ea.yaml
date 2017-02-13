@@ -1,7 +1,7 @@
 ---
 features:
   - |
-    Add ``supported_power_states`` response field in the following Ironic APIs.
+    Adds ``supported_power_states`` response field in the following Ironic APIs.
     This feature is supported in Ironic API microversion 1.32 and above.
 
     * Create Node, `/v1/nodes`
