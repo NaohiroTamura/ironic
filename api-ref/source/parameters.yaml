@@ -937,7 +937,7 @@ supported_boot_devices:
   type: array
 supported_power_states:
   description: |
-    A list of target power states which a driver can accept. Added in API microversion 1.32.
+    A list of target power states which a driver supports. Added in API microversion 1.32.
   in: body
   required: true
   type: array
