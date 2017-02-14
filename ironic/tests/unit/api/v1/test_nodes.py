@@ -88,8 +88,6 @@ class TestListNodes(test_api_base.BaseApiTest):
         data = self.get_json('/nodes')
         self.assertEqual([], data['nodes'])
 
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
-                       lambda *n: [])
     def test_one(self):
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id)
@@ -100,7 +98,6 @@ class TestListNodes(test_api_base.BaseApiTest):
         self.assertIn('power_state', data['nodes'][0])
         self.assertIn('provision_state', data['nodes'][0])
         self.assertIn('uuid', data['nodes'][0])
-        self.assertIn('supported_power_states', data['nodes'][0])
         self.assertEqual(node.uuid, data['nodes'][0]["uuid"])
         self.assertNotIn('driver', data['nodes'][0])
         self.assertNotIn('driver_info', data['nodes'][0])
@@ -121,6 +118,7 @@ class TestListNodes(test_api_base.BaseApiTest):
         self.assertNotIn('resource_class', data['nodes'][0])
         for field in api_utils.V31_FIELDS:
             self.assertNotIn(field, data['nodes'][0])
+        self.assertNotIn('supported_power_states', data['nodes'][0])
         # never expose the chassis_id
         self.assertNotIn('chassis_id', data['nodes'][0])
 
@@ -185,8 +183,6 @@ class TestListNodes(test_api_base.BaseApiTest):
             headers={api_base.Version.string: '1.31'})
         self.assertNotIn('supported_power_states', data)
 
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
-                       lambda *n: [])
     def test_get_one_custom_fields(self):
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id)
@@ -195,12 +191,8 @@ class TestListNodes(test_api_base.BaseApiTest):
             '/nodes/%s?fields=%s' % (node.uuid, fields),
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         # We always append "links"
-        self.assertItemsEqual(
-            ['extra', 'instance_info', 'links', 'supported_power_states'],
-            data)
+        self.assertItemsEqual(['extra', 'instance_info', 'links'], data)
 
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
-                       lambda *n: [])
     def test_get_collection_custom_fields(self):
         fields = 'uuid,instance_info'
         for i in range(3):
@@ -215,9 +207,7 @@ class TestListNodes(test_api_base.BaseApiTest):
         self.assertEqual(3, len(data['nodes']))
         for node in data['nodes']:
             # We always append "links"
-            self.assertItemsEqual(
-                ['uuid', 'instance_info', 'links', 'supported_power_states'],
-                node)
+            self.assertItemsEqual(['uuid', 'instance_info', 'links'], node)
 
     def test_get_custom_fields_invalid_fields(self):
         node = obj_utils.create_test_node(self.context,
@@ -241,8 +231,6 @@ class TestListNodes(test_api_base.BaseApiTest):
             expect_errors=True)
         self.assertEqual(http_client.NOT_ACCEPTABLE, response.status_int)
 
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
-                       lambda *n: [])
     def test_get_one_custom_fields_show_password(self):
         node = obj_utils.create_test_node(self.context,
                                           chassis_id=self.chassis.id,
@@ -252,8 +240,7 @@ class TestListNodes(test_api_base.BaseApiTest):
             '/nodes/%s?fields=%s' % (node.uuid, fields),
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         # We always append "links"
-        self.assertItemsEqual(
-            ['driver_info', 'links', 'supported_power_states'], data)
+        self.assertItemsEqual(['driver_info', 'links'], data)
         self.assertEqual('******', data['driver_info']['fake_password'])
 
     def test_get_network_interface_fields_invalid_api_version(self):

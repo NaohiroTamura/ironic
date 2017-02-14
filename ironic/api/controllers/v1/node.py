@@ -981,7 +981,9 @@ class Node(base.APIBase):
 
         # NOTE(naohirot): As an exception, 'supported_power_states' doesn't
         # come from the DB.
-        supported_power_states = _get_supported_power_states(rpc_node)
+        supported_power_states = None
+        if fields is None or 'supported_power_states' in fields:
+            supported_power_states = _get_supported_power_states(rpc_node)
 
         update_state_in_older_versions(node)
         hide_fields_in_newer_versions(node)

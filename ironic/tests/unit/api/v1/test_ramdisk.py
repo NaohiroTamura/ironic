@@ -87,10 +87,6 @@ class TestLookup(test_api_base.BaseApiTest):
             expect_errors=True)
         self.assertEqual(http_client.NOT_FOUND, response.status_int)
 
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_topic_for',
-                       lambda *n: 'test-topic')
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
-                       lambda *n: [])
     def test_found_by_addresses(self):
         obj_utils.create_test_port(self.context,
                                    node_id=self.node.id,
@@ -100,15 +96,10 @@ class TestLookup(test_api_base.BaseApiTest):
             '/lookup?addresses=%s' % ','.join(self.addresses),
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         self.assertEqual(self.node.uuid, data['node']['uuid'])
-        self.assertEqual((set(ramdisk._LOOKUP_RETURN_FIELDS) |
-                          {'links', 'supported_power_states'}),
+        self.assertEqual(set(ramdisk._LOOKUP_RETURN_FIELDS) | {'links'},
                          set(data['node']))
         self._check_config(data)
 
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_topic_for',
-                       lambda *n: 'test-topic')
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
-                       lambda *n: [])
     @mock.patch.object(ramdisk.LOG, 'warning', autospec=True)
     def test_ignore_malformed_address(self, mock_log):
         obj_utils.create_test_port(self.context,
@@ -121,38 +112,27 @@ class TestLookup(test_api_base.BaseApiTest):
             '/lookup?addresses=%s' % addresses,
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         self.assertEqual(self.node.uuid, data['node']['uuid'])
-        self.assertEqual(set(ramdisk._LOOKUP_RETURN_FIELDS) |
-                         {'links', 'supported_power_states'},
+        self.assertEqual(set(ramdisk._LOOKUP_RETURN_FIELDS) | {'links'},
                          set(data['node']))
         self._check_config(data)
         self.assertTrue(mock_log.called)
 
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_topic_for',
-                       lambda *n: 'test-topic')
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
-                       lambda *n: [])
     def test_found_by_uuid(self):
         data = self.get_json(
             '/lookup?addresses=%s&node_uuid=%s' %
             (','.join(self.addresses), self.node.uuid),
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         self.assertEqual(self.node.uuid, data['node']['uuid'])
-        self.assertEqual((set(ramdisk._LOOKUP_RETURN_FIELDS) |
-                          {'links', 'supported_power_states'}),
+        self.assertEqual(set(ramdisk._LOOKUP_RETURN_FIELDS) | {'links'},
                          set(data['node']))
         self._check_config(data)
 
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_topic_for',
-                       lambda *n: 'test-topic')
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
-                       lambda *n: [])
     def test_found_by_only_uuid(self):
         data = self.get_json(
             '/lookup?node_uuid=%s' % self.node.uuid,
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         self.assertEqual(self.node.uuid, data['node']['uuid'])
-        self.assertEqual((set(ramdisk._LOOKUP_RETURN_FIELDS) |
-                          {'links', 'supported_power_states'}),
+        self.assertEqual(set(ramdisk._LOOKUP_RETURN_FIELDS) | {'links'},
                          set(data['node']))
         self._check_config(data)
 
@@ -164,10 +144,6 @@ class TestLookup(test_api_base.BaseApiTest):
             expect_errors=True)
         self.assertEqual(http_client.NOT_FOUND, response.status_int)
 
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_topic_for',
-                       lambda *n: 'test-topic')
-    @mock.patch.object(rpcapi.ConductorAPI, 'get_supported_power_states',
-                       lambda *n: [])
     def test_no_restrict_lookup(self):
         CONF.set_override('restrict_lookup', False, 'api')
         data = self.get_json(
@@ -175,8 +151,7 @@ class TestLookup(test_api_base.BaseApiTest):
             (','.join(self.addresses), self.node2.uuid),
             headers={api_base.Version.string: str(api_v1.MAX_VER)})
         self.assertEqual(self.node2.uuid, data['node']['uuid'])
-        self.assertEqual((set(ramdisk._LOOKUP_RETURN_FIELDS) |
-                          {'links', 'supported_power_states'}),
+        self.assertEqual(set(ramdisk._LOOKUP_RETURN_FIELDS) | {'links'},
                          set(data['node']))
         self._check_config(data)
 
