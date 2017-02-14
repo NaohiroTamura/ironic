@@ -260,8 +260,6 @@ Node State Summary
 
 Get a summary of the Node's current power, provision, raid, and console status.
 
-API microversion 1.32 introduced the ``supported_power_states`` field.
-
 Normal response code: 200
 
 Request
