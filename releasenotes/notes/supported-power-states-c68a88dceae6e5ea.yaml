@@ -1,8 +1,9 @@
 ---
 features:
   - |
-    Adds ``supported_power_states`` field in the responses of the requests to
-    the following API endpoints. This feature is supported in Ironic API
+    Adds a new field called ``supported_power_states`` to the Node object.
+    The new field holds a list with all the allowed power states for that node.
+    The following API endpoints support this feature in Ironic API
     microversion 1.32 and above.
 
     * Create Node, `POST /v1/nodes`

@@ -4,9 +4,8 @@ REST API Version History
 
 **1.32** (Ocata)
 
-    Add support for "Create Node", "List Nodes", "List Nodes Detailed",
-    "Show Node Details", "Update Node" and "Node State Summary" APIs to
-    show supported_power_states response field for a node.
+    Add a new field called ``supported_power_states`` to the Node object.
+    The new field holds a list with all the allowed power states for that node.
 
 **1.31** (Ocata)
 
