@@ -439,7 +439,8 @@ class NodeStates(base.APIBase):
                      raid_config=None,
                      target_raid_config=None,
                      supported_power_states=[
-                         "power on", "power off", "rebooting"])
+                         ir_states.POWER_ON, ir_states.POWER_OFF,
+                         ir_states.REBOOT])
         return sample
 
 
@@ -1024,7 +1025,8 @@ class Node(base.APIBase):
                      management_interface=None, power_interface=None,
                      raid_interface=None, vendor_interface=None,
                      supported_power_states=[
-                         "power on", "power off", "rebooting"])
+                         ir_states.POWER_ON, ir_states.POWER_OFF,
+                         ir_states.REBOOT])
         # NOTE(matty_dubs): The chassis_uuid getter() is based on the
         # _chassis_uuid variable:
         sample._chassis_uuid = 'edcad704-b2da-41d5-96d9-afd580ecfa12'
